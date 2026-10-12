@@ -5,8 +5,11 @@ import { buildCharacter, buildYokai, SW, SH } from './sprites.js';
 import { CHARS } from './chars.js';
 import { clamp, rng } from './util.js';
 
-const WALK_SPEED = 78;    // ドット／秒
-const NPC_SPEED = 26;
+// ガタつかないよう、1/60秒ごとに「きっちり整数ドット」ずつ動かす
+const TICK = 1 / 60;
+const WALK_STEP = 1;      // 1コマで進むドット（ふつう）
+const RUN_STEP = 2;       // 指を大きく すべらせたとき
+const NPC_STEP = 0.5;     // 町の人（2コマに1ドット）
 const REACH = 16;         // しらべられる距離
 
 const DIRS = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] };
@@ -77,7 +80,7 @@ export class Field {
       if (this.free(a, a.x + dx, a.y)) { a.x += dx; moved = true; }
       else if (Math.abs(dx) > Math.abs(dy) * 1.5) {
         for (const n of [1, -1, 2, -2, 3, -3, 4, -4, 5, -5, 6, -6]) {
-          if (this.free(a, a.x + dx, a.y + n) && this.free(a, a.x, a.y + Math.sign(n))) { a.y += Math.sign(n) * Math.min(1, Math.abs(dx)); moved = true; break; }
+          if (this.free(a, a.x + dx, a.y + n) && this.free(a, a.x, a.y + Math.sign(n))) { a.y += Math.sign(n); moved = true; break; }
         }
       }
     }
@@ -85,7 +88,7 @@ export class Field {
       if (this.free(a, a.x, a.y + dy)) { a.y += dy; moved = true; }
       else if (Math.abs(dy) > Math.abs(dx) * 1.5) {
         for (const n of [1, -1, 2, -2, 3, -3, 4, -4, 5, -5, 6, -6]) {
-          if (this.free(a, a.x + n, a.y + dy) && this.free(a, a.x + Math.sign(n), a.y)) { a.x += Math.sign(n) * Math.min(1, Math.abs(dy)); moved = true; break; }
+          if (this.free(a, a.x + n, a.y + dy) && this.free(a, a.x + Math.sign(n), a.y)) { a.x += Math.sign(n); moved = true; break; }
         }
       }
     }
@@ -99,37 +102,53 @@ export class Field {
 
   update(dt, stick, frozen) {
     this.t += dt;
-    const p = this.player;
-    p.moving = false;
-    if (!frozen && stick) {
-      const [sx, sy] = stick;
-      const sp = WALK_SPEED * dt;
-      p.dir = this.faceFrom(sx, sy);
-      const bx = p.x, by = p.y;
-      this.move(p, sx * sp, sy * sp);
-      const d = Math.hypot(p.x - bx, p.y - by);
-      p.walkDist += d > 0 ? d : sp * 0.5;
-      p.moving = true;
+    this.acc = Math.min((this.acc || 0) + dt, TICK * 4);
+    while (this.acc >= TICK) {
+      this.acc -= TICK;
+      this.tick(stick, frozen);
     }
-    for (const a of this.actors) if (!a.isPlayer) this.updateNpc(a, dt, frozen);
     this.target = frozen ? null : this.findTarget();
   }
 
-  updateNpc(a, dt, frozen) {
+  tick(stick, frozen) {
+    const p = this.player;
+    p.moving = false;
+    if (!frozen && stick) {
+      // 8方向に そろえる
+      const [sx, sy, run] = stick;
+      const oct = Math.round(Math.atan2(sy, sx) / (Math.PI / 4));
+      const dx = Math.round(Math.cos(oct * Math.PI / 4)), dy = Math.round(Math.sin(oct * Math.PI / 4));
+      // ななめのときは、いま向いている向きを なるべく保つ
+      if (!(dx && dy && (DIRS[p.dir][0] === dx || DIRS[p.dir][1] === dy))) p.dir = this.faceFrom(dx, dy);
+      const steps = run ? RUN_STEP : WALK_STEP;
+      for (let i = 0; i < steps; i++) this.move(p, dx, dy);
+      p.walkDist += steps;
+      p.moving = true;
+    }
+    for (const a of this.actors) if (!a.isPlayer) this.updateNpc(a, frozen);
+  }
+
+  updateNpc(a, frozen) {
     a.moving = false;
-    if (!a.wander || frozen || a.talking) return;
+    if (!a.wander || frozen) return;
     if (a.goal) {
-      const vx = a.goal[0] - a.x, vy = a.goal[1] - a.y, len = Math.hypot(vx, vy);
-      if (len < 1 || a.stuck > 0.6) { a.goal = null; a.wait = 1.5 + this.rand() * 3; return; }
-      const sp = NPC_SPEED * dt;
-      const ok = this.move(a, vx / len * sp, vy / len * sp);
-      a.stuck = ok ? 0 : (a.stuck || 0) + dt;
-      a.dir = this.faceFrom(vx, vy);
-      a.walkDist += sp;
+      const vx = a.goal[0] - a.x, vy = a.goal[1] - a.y;
+      if ((Math.abs(vx) < 1 && Math.abs(vy) < 1) || a.stuck > 36) { a.goal = null; a.wait = 1.5 + this.rand() * 3; return; }
+      // 町の人は 4方向に、ゆっくり歩く
+      const horiz = Math.abs(vx) >= 1 && (Math.abs(vx) > Math.abs(vy) || Math.abs(vy) < 1);
+      const dx = horiz ? Math.sign(vx) : 0, dy = horiz ? 0 : Math.sign(vy);
+      a.dir = this.faceFrom(dx, dy);
       a.moving = true;
-    } else if ((a.wait -= dt) <= 0) {
+      a.sub = (a.sub || 0) + NPC_STEP;
+      if (a.sub >= 1) {
+        a.sub -= 1;
+        const ok = this.move(a, dx, dy);
+        a.stuck = ok ? 0 : (a.stuck || 0) + 1;
+        a.walkDist += 1;
+      }
+    } else if ((a.wait -= TICK) <= 0) {
       const r = a.wander * T;
-      a.goal = [a.homeX + (this.rand() * 2 - 1) * r, a.homeY + (this.rand() * 2 - 1) * r];
+      a.goal = [Math.round(a.homeX + (this.rand() * 2 - 1) * r), Math.round(a.homeY + (this.rand() * 2 - 1) * r)];
       a.stuck = 0;
     }
   }

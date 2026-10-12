@@ -51,7 +51,7 @@ function frame(now) {
     }
   }
 
-  const stick = readKeys() || (input.dx || input.dy ? [input.dx, input.dy] : null);
+  const stick = readKeys() || (input.dx || input.dy ? [input.dx, input.dy, input.run] : null);
   field.update(dt, stick, !started || busy || isTalking());
   updateTalk(dt);
   hint.classList.toggle('hidden', isTalking());

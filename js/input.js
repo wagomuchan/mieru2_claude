@@ -6,6 +6,7 @@ const RADIUS = 44;     // スティックの 半径（CSSピクセル）
 
 export const input = {
   dx: 0, dy: 0,        // 歩く向き（長さ 0〜1）
+  run: false,          // 指を大きく すべらせている
   taps: [],            // たまった タップ
   moved: false,        // いちどでも 歩いたか
 };
@@ -19,7 +20,7 @@ export function initInput(root) {
 
   const reset = () => {
     pid = null; dragging = false;
-    input.dx = 0; input.dy = 0;
+    input.dx = 0; input.dy = 0; input.run = false;
     stick.classList.remove('on');
     knob.style.transform = '';
   };
@@ -47,6 +48,7 @@ export function initInput(root) {
     knob.style.transform = `translate(${vx}px, ${vy}px)`;
     const mag = Math.min(1, Math.max(0, (len - DEAD * 0.5) / (RADIUS * 0.6)));
     input.dx = vx / len * mag; input.dy = vy / len * mag;
+    input.run = len >= RADIUS * 0.9;
     input.moved = true;
   });
 
