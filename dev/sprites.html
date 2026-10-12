@@ -1,0 +1,15 @@
+<!doctype html><html><body style="background:#3a6;margin:0">
+<canvas id="c" width="900" height="700"></canvas>
+<script type="module">
+import { buildCharacter, buildYokai } from '../js/sprites.js';
+import { CHARS } from '../js/chars.js';
+const c=document.getElementById('c').getContext('2d'); c.imageSmoothingEnabled=false;
+let y=4;
+for (const k of Object.keys(CHARS)) {
+  const f=buildCharacter(CHARS[k]); let x=4;
+  for (const d of ['down','up','left','right']) for (let i=0;i<4;i++){ if(i===2) continue; c.drawImage(f[d][i],x,y,48,72); x+=52; }
+  y+=76;
+}
+const yk=buildYokai(); c.drawImage(yk[0],4,y,48,48); c.drawImage(yk[1],56,y,48,48);
+document.title='done';
+</script></body></html>

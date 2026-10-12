@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="見える2">
+<meta name="theme-color" content="#000000">
+<meta name="format-detection" content="telephone=no">
+<link rel="apple-touch-icon" href="icon/icon-180.png">
+<link rel="icon" href="icon/icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>見える2</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <div id="screen"><canvas id="game"></canvas></div>
+  <div id="panel">
+    <div id="place"></div>
+    <div id="msg" class="win hidden">
+      <div id="msgname"></div>
+      <div id="msgtext"></div>
+      <div id="msgnext">▼</div>
+    </div>
+    <div id="hint">ゆびを すべらせて あるく<br>タップで しらべる・はなす</div>
+    <div id="version">試作1</div>
+  </div>
+</div>
+<div id="stick"><div id="knob"></div></div>
+<div id="title">
+  <div id="logo">見える<span>2</span></div>
+  <div id="tapstart">タップして はじめる</div>
+  <div id="a2hs">Safariの 共有ボタン →「ホーム画面に追加」で<br>アプリのように あそべます</div>
+</div>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

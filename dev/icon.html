@@ -1,0 +1,15 @@
+<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;background:#000">
+<canvas id="c" width="512" height="512"></canvas>
+<script type="module">
+import { buildCharacter, buildYokai } from '../js/sprites.js';
+import { CHARS } from '../js/chars.js';
+const cv=document.getElementById('c'), c=cv.getContext('2d'); c.imageSmoothingEnabled=false;
+const g=c.createRadialGradient(256,200,40,256,256,360); g.addColorStop(0,'#5a3a9a'); g.addColorStop(1,'#140e2a');
+c.fillStyle=g; c.fillRect(0,0,512,512);
+// 星
+c.fillStyle='#fff'; for (const [x,y] of [[60,70],[440,90],[400,40],[90,160],[470,200],[40,300]]) c.fillRect(x,y,8,8);
+const f=buildCharacter(CHARS.shimeru);
+c.drawImage(f.down[0], 256-16*8-40, 40, 16*16, 24*16);
+const y=buildYokai(); c.drawImage(y[0], 330, 300, 12*12, 12*12);
+document.title='done';
+</script></body></html>

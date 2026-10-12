@@ -1,0 +1,10 @@
+<!doctype html><html><body style="background:#6cb04a;margin:0">
+<canvas id="c" width="900" height="420"></canvas>
+<script type="module">
+import { buildCharacter, buildYokai } from '../js/sprites.js';
+import { CHARS } from '../js/chars.js';
+const c=document.getElementById('c').getContext('2d'); c.imageSmoothingEnabled=false;
+const f=buildCharacter(CHARS.shimeru); let x=4;
+for (const d of ['down','up','right']) for (let i=0;i<4;i++){ if(i===2) continue; c.drawImage(f[d][i],x,4,96,144); x+=98; }
+const yk=buildYokai(); c.drawImage(yk[0],4,200,96,96); c.drawImage(yk[1],110,200,96,96);
+</script></body></html>
