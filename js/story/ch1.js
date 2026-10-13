@@ -5,7 +5,7 @@ import { game, addNaka, hearts } from '../game.js';
 import { PH } from './phase.js';
 
 const ME = 'シメール', EL = 'エレシア', MA = 'メイナ';
-const CAMP_REST = { tx: 15.5, ty: 12, dir: 'down' };   // テントの まえ
+const CAMP_REST = { tx: 15, ty: 11, dir: 'down' };   // テントの まえ
 
 const avgAwaken = () => game.party.reduce((s, m) => s + m.awaken, 0) / game.party.length;
 const addDiary = id => { if (!game.diary.includes(id)) game.diary.push(id); };
@@ -137,7 +137,7 @@ async function showEvent(a, lines) {
     ['c5', 'gossip', 28, 8], ['c6', 'sailor', 23, 8], ['c7', 'guard', 19, 8],
   ];
   for (const [id, look, x, y] of crowd) a.add({ id, look, x, y, dir: 'up' });
-  a.add({ id: 'stage_meina', look: 'meina', x: 24, y: 6, dir: 'down' });
+  a.add({ id: 'stage_meina', look: 'meina', x: 24, y: 7, dir: 'down', lift: 14 });
   await a.wait(300);
   await a.fade(false);
   await a.say([
@@ -145,9 +145,9 @@ async function showEvent(a, lines) {
     `${MA}@smile|ガハハ！ ミラマールの みなさん、 今夜は よく 来てくれた！`,
     `${MA}@smile|旅の一座 「ルミエール」、 開演だよ！`,
   ]);
-  await a.walk('stage_meina', 23, 6, 1);
-  a.add({ id: 'stage_elesia', look: 'elesia', x: 28, y: 6, dir: 'left' });
-  await a.walk('stage_elesia', 25.5, 6, 0.6);
+  await a.walk('stage_meina', 23, 7, 1);
+  a.add({ id: 'stage_elesia', look: 'elesia', x: 28, y: 7, dir: 'left', lift: 14 });
+  await a.walk('stage_elesia', 25.5, 7, 0.6);
   a.face('stage_elesia', 'down');
   await a.say([
     '青い ドレスの 少女が、 ぶたいの まんなかに 立った。',
@@ -156,7 +156,7 @@ async function showEvent(a, lines) {
   a.emote('stage_elesia', '♪', 3);
   await a.say(['エレシアが 歌いはじめた。', 'すきとおった 声が、 夜の 港に ひろがっていく。']);
   // 妖怪が あつまってくる
-  const spots = [[18, 7], [18, 9], [25, 8], [27, 9], [22, 7], [28, 7], [21, 10], [29, 8]];
+  const spots = [[18, 7], [18, 9], [25, 8], [27, 9], [19, 7], [28, 7], [21, 10], [29, 8]];
   for (let i = 0; i < spots.length; i++) {
     const [x, y] = spots[i];
     a.add({ id: 'sy' + i, yokai: true, x, y, dir: 'up' });
@@ -584,10 +584,10 @@ async function restAtTent(a) {
   a.tint('night');
   await a.wait(300);
   await a.fade(false);
-  const key = `${x}|${y}|${lv}`;
-  const talk = BED_TALK[`${x}|${y}`][lv];
-  if (!game.bedTalks[key]) { game.bedTalks[key] = true; await a.say(talk); }
-  else await a.say(BED_TALK_AGAIN[`${x}|${y}`]);
+  const pk = [x, y].sort().join('|');
+  const key = `${pk}|${lv}`;
+  if (!game.bedTalks[key]) { game.bedTalks[key] = true; await a.say(BED_TALK[pk][lv]); }
+  else await a.say(BED_TALK_AGAIN[pk]);
 
   await a.fade(true);
   a.tint(null);

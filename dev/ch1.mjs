@@ -76,7 +76,7 @@ await talkAt(19, 21, 'up'); await advance();
 console.log('after clues', await state());
 await p.screenshot({ path: out + '/c6_tower.png' });
 // テントで 休む
-await talkAt(15.5, 12, 'up'); await advance(0);
+await talkAt(15, 11, 'up'); await advance(0);
 console.log('after rest', await state(), await p.evaluate(() => JSON.stringify(window.__mieru.game.naka)));
 // メニュー
 await p.click('#menubtn'); await p.waitForTimeout(300);
@@ -84,5 +84,43 @@ await p.screenshot({ path: out + '/c7_menu.png' });
 await p.click('#mtabs button:nth-child(3)'); await p.waitForTimeout(200);
 await p.screenshot({ path: out + '/c8_naka.png' });
 await p.click('#mclose');
+// 灯台へ
+async function walkInto(tx, ty, dir, dx, dy) {
+  await p.evaluate(([tx, ty, dir]) => { const f = window.__mieru.field; f.safe = 5; f.teleport(tx * 16 + 8, ty * 16 + 12, dir); }, [tx, ty, dir]);
+  await p.mouse.move(200, 700); await p.mouse.down(); await p.mouse.move(200 + dx * 40, 700 + dy * 40);
+  for (let i = 0; i < 30; i++) { await p.waitForTimeout(100); if (await p.evaluate(() => window.__mieru.busy)) break; }
+  await p.mouse.up();
+  await advance();
+}
+await walkInto(37.5, 30, 'up', 0, -1);
+console.log('map', await state());
+await p.waitForTimeout(400);
+await p.screenshot({ path: out + '/d1_lh1.png' });
+await walkInto(13, 2, 'right', 1, 0);
+console.log('map', await state());
+await walkInto(2, 2, 'left', -1, 0);
+console.log('map', await state());
+await p.screenshot({ path: out + '/d2_lh3.png' });
+await talkAt(12, 4, 'up'); await advance(0);
+console.log('guide done', await state());
+await walkInto(13, 2, 'right', 1, 0);
+console.log('map', await state());
+await p.screenshot({ path: out + '/d3_top.png' });
+// つよくして ボスへ
+await p.evaluate(() => { for (const m of window.__mieru.game.party) { m.max.hp = 400; m.hp = 400; m.max.atk = 80; m.max.mag = 80; m.max.def = 60; m.max.mp = 99; m.mp = 99; } window.__mieru.game.speed = 4; });
+await walkInto(6, 8, 'up', 0, -1);
+for (let i = 0; i < 300; i++) {
+  const st = await p.evaluate(() => ({ mode: window.__mieru.mode, phase: window.__mieru.game.phase, busy: window.__mieru.busy, txt: document.getElementById('msgtext').textContent, ch: !document.getElementById('choices').classList.contains('hidden') }));
+  if (st.txt.includes('ガタゴト、 ガタゴト。') && !globalThis.shot) { globalThis.shot = 1; await p.screenshot({ path: out + '/d4_wagon.png' }); }
+  if (st.txt.includes('白い フードの 女|') || st.txt.includes('保護する')) { if (!globalThis.shot2) { globalThis.shot2 = 1; await p.waitForTimeout(500); await p.screenshot({ path: out + '/d5_hood.png' }); } }
+  if (st.ch) { await p.click('#choices button:nth-child(1)'); await p.waitForTimeout(250); continue; }
+  if (!st.busy && st.mode === 'field' && st.phase === 6) break;
+  if (st.mode === 'battle') { await p.waitForTimeout(500); continue; }
+  await p.mouse.click(195, 760); await p.waitForTimeout(100);
+}
+console.log('end', await state());
+await p.screenshot({ path: out + '/d6_end.png' });
+await p.reload(); await p.waitForTimeout(800);
+await p.screenshot({ path: out + '/d7_title.png' });
 console.log('errors', errors.length);
 await b.close();

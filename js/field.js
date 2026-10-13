@@ -404,7 +404,7 @@ export class Field {
     this.emotes = this.emotes.filter(e => e.until > this.t);
     for (const e of this.emotes) {
       const hy = e.a.yokai ? 20 : 30;
-      drawEmote(ctx, Math.round(e.a.x + ox), Math.round(e.a.y + oy - hy), e.kind, this.t);
+      drawEmote(ctx, Math.round(e.a.x + ox), Math.round(e.a.y + oy - hy - (e.a.lift || 0)), e.kind, this.t);
     }
 
     // しらべられるものの 上に「！」
@@ -440,19 +440,21 @@ export class Field {
       } else ctx.drawImage(f, x - 6, y - 14 + bob);
       return;
     }
+    // lift：ぶたいの 上など、すこし 高い ところに 立つ
+    const ly = y - (a.lift || 0);
     if (!ghost) {
       ctx.fillStyle = 'rgba(0,0,0,.2)';
-      ctx.fillRect(x - 5, y, 11, 2); ctx.fillRect(x - 4, y - 1, 9, 1);
+      ctx.fillRect(x - 5, ly, 11, 2); ctx.fillRect(x - 4, ly - 1, 9, 1);
     }
     const step = a.moving ? Math.floor(a.walkDist / 7) % 4 : 0;
     const img = a.frames[a.dir][step];
-    ctx.drawImage(img, x - SW / 2, y - SH + 1);
+    ctx.drawImage(img, x - SW / 2, ly - SH + 1);
   }
 }
 
 const TINTS = {
   evening: 'rgba(255, 110, 60, .22)',
-  night: 'rgba(16, 18, 70, .55)',
+  night: 'rgba(14, 14, 64, .62)',
   dim: 'rgba(10, 6, 30, .35)',
 };
 
