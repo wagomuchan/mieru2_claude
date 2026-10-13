@@ -1,11 +1,14 @@
 // 見える2 ─ はじまり
 import { Field } from './field.js';
-import { buildMiramar } from './maps/miramar.js';
+import { MAPS } from './maps/index.js';
+import { T } from './tiles.js';
 import { initInput, input, readKeys, takeTap } from './input.js';
 import { say, ask, isTalking, updateTalk, advanceTalk, setPlace, fade } from './ui.js';
 import { BattleView } from './battle/view.js';
 import { AREAS } from './battle/areas.js';
-import { game, restAll } from './game.js';
+import { game, restAll, joinParty, newGame, autoSave, saveGame, latestSave, loadSave } from './game.js';
+import { story } from './story/ch1.js';
+import { openMenu, isMenuOpen } from './menu.js';
 
 const app = document.getElementById('app');
 const screenEl = document.getElementById('screen');
@@ -14,12 +17,12 @@ const ctx = canvas.getContext('2d');
 const hint = document.getElementById('hint');
 const place = document.getElementById('place');
 const title = document.getElementById('title');
+const menuBtn = document.getElementById('menubtn');
 
 let W = 256, H = 256;
 let field = null;
 let battleView = null;
-let mode = 'field';   // field / battle
-let started = false;
+let mode = 'title';   // title / field / battle
 let busy = false;     // 会話や イベントの あいだは 歩けない
 
 // 画面の大きさを決める。ドットが にじまないよう、
@@ -45,96 +48,168 @@ let last = 0;
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000 || 0);
   last = now;
+  if (mode !== 'title') game.playSec += dt;
 
   let tap;
   while ((tap = takeTap())) {
-    if (!started || mode !== 'field') continue;
+    if (mode !== 'field' || isMenuOpen()) continue;
     if (isTalking()) advanceTalk();
     else if (!busy) {
       const res = field.interact();
-      if (res) onTalk(res);
+      if (res) runEvent(() => story.onTalk(res.target, res.lines, api));
     }
   }
 
-  if (mode === 'field') {
-    const stick = readKeys() || (input.dx || input.dy ? [input.dx, input.dy] : null);
-    field.update(dt, stick, !started || busy || isTalking());
+  if (mode === 'field' && field) {
+    const frozen = busy || isTalking() || isMenuOpen();
+    const stick = frozen ? null : readKeys() || (input.dx || input.dy ? [input.dx, input.dy] : null);
+    field.update(dt, stick, frozen);
     updateTalk(dt);
-    hint.classList.toggle('hidden', isTalking() || mode !== 'field');
+    hint.classList.toggle('hidden', isTalking() || busy);
     hint.classList.toggle('off', input.moved);
-    if (field.encounter && !busy) startBattle(field.encounter);
+    menuBtn.classList.toggle('hidden', busy || isTalking());
+    if (!busy) {
+      if (field.warp) { const w = field.warp; field.warp = null; runEvent(() => api.goto(w.to, w.tx, w.ty, w.dir)); }
+      else if (field.trigger) { const t = field.trigger; field.trigger = null; runEvent(() => story.onTrigger(t.id, api)); }
+      else if (field.encounter) { const s = field.encounter; runEvent(() => fieldBattle(s)); }
+    }
     field.draw(ctx, W, H);
-  } else {
+  } else if (mode === 'battle') {
     battleView.update(dt);
-    updateTalk(dt);
     battleView.draw(ctx, W, H);
   }
   requestAnimationFrame(frame);
 }
 
-async function talk(lines) {
+// イベント（会話や 物語）を ひとつずつ 動かす
+async function runEvent(fn) {
+  if (busy) return;
   busy = true;
-  await say(lines);
+  try { await fn(); } catch (e) { console.error(e); }
   busy = false;
+  if (mode === 'field') { rememberPos(); autoSave(); }
 }
 
-async function onTalk({ lines, target }) {
-  busy = true;
-  if (target.action === 'inn') await innFlow(lines);
-  else await say(lines);
-  busy = false;
-}
-
-// 宿屋で 休む
-async function innFlow() {
-  const pick = await ask(['宿屋の おかみ|ひとばん とまっていく？ ……今回は とくべつに タダで いいよ。'], ['とまる', 'やめる']);
-  if (pick !== 0) { await say(['宿屋の おかみ|またおいで。']); return; }
-  await fade(true);
-  restAll();
+function rememberPos() {
   const p = field.player;
-  game.rest = { x: p.x, y: p.y, dir: p.dir };
-  await new Promise(r => setTimeout(r, 600));
-  await fade(false);
-  await say(['みんな ぐっすり ねむった。', 'HPと MPが ぜんぶ かいふくした！ おうえんも 3回に もどった！']);
+  game.map = field.id;
+  game.pos = { x: p.x, y: p.y, dir: p.dir };
 }
 
-// 戦闘
-async function startBattle(sym) {
-  busy = true;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const followerIds = () => game.partyIds.filter(id => id !== 'shimeru');
+
+// マップを 読みこむ（tx, ty はタイル単位。pos はドット単位）
+function loadMap(id, opts = {}) {
+  const data = MAPS[id]();
+  const start = opts.pos ? opts.pos
+    : opts.tx != null ? { x: opts.tx * T + 8, y: opts.ty * T + 12, dir: opts.dir || 'down' } : null;
+  field = new Field(data, { followers: followerIds(), start });
+  setPlace(data.name);
+  game.map = id;
+  rememberPos();
+}
+
+// 戦闘（マップの 妖怪シンボルに ぶつかった）
+async function fieldBattle(sym) {
   field.encounter = null;
   const groups = AREAS[sym.area];
-  const group = groups[Math.floor(Math.random() * groups.length)];
-  // MOTHER風の 切りかえ（画面が ちらつく）
-  for (let i = 0; i < 3; i++) {
-    canvas.style.filter = 'invert(1)'; await sleep(70);
-    canvas.style.filter = ''; await sleep(70);
-  }
-  mode = 'battle';
-  place.classList.add('hidden');
-  hint.classList.add('hidden');
-  const result = await battleView.run(group, sym.area);
-  place.classList.remove('hidden');
-  if (result === 'win') {
-    field.defeat(sym);
-    mode = 'field';
-  } else {
-    // 全滅：最後に 休んだ場所へ
+  const res = await api.battle(groups[Math.floor(Math.random() * groups.length)], sym.area);
+  if (res === 'win') field.defeat(sym);
+}
+
+// ───────── 物語から つかう 道具 ─────────
+const api = {
+  say, ask, fade,
+  wait: ms => sleep(ms),
+  get field() { return field; },
+  walk: (id, tx, ty, speed) => field.walkTo(id, tx, ty, speed),
+  face(id, dir) { const a = field.actor(id); if (a) a.dir = dir; },
+  emote: (id, kind, sec) => field.emote(id, kind, sec),
+  add: def => field.addActor(def),
+  remove: id => field.removeActor(id),
+  hide(id, on = true) { const a = field.actor(id); if (a) a.hidden = on; },
+  tint(t) { field.tint = t; },
+  // 別の マップへ（フェードつき）
+  async goto(id, tx, ty, dir) {
+    await fade(true);
+    loadMap(id, { tx, ty, dir });
+    await sleep(150);
+    await fade(false);
+    await story.onEnter(id, api);
+  },
+  // 物語を 進めて、いまの マップを 作りなおす
+  setPhase(p) {
+    game.phase = p;
+    const pos = { x: field.player.x, y: field.player.y, dir: field.player.dir };
+    loadMap(field.id, { pos });
+  },
+  reload() { const p = field.player; loadMap(field.id, { pos: { x: p.x, y: p.y, dir: p.dir } }); },
+  join(id) { joinParty(id); field.setFollowers(followerIds()); },
+  setFollowersHere() { field.setFollowers(followerIds()); },
+  flag(k, v = true) { game.flags[k] = v; },
+  has: k => !!game.flags[k],
+  restHere() {
+    restAll();
+    const p = field.player;
+    game.rest = { map: field.id, x: p.x, y: p.y, dir: p.dir };
+  },
+  save: () => saveGame(),
+  // 戦闘。'win' か 'lose' を返す。負けたら 最後に 休んだ場所へ
+  async battle(group, area, opts = {}) {
+    for (let i = 0; i < 3; i++) {
+      canvas.style.filter = 'invert(1)'; await sleep(70);
+      canvas.style.filter = ''; await sleep(70);
+    }
+    mode = 'battle';
+    place.classList.add('hidden');
+    hint.classList.add('hidden');
+    menuBtn.classList.add('hidden');
+    const result = await battleView.run(group, area);
+    place.classList.remove('hidden');
+    if (result === 'win') { mode = 'field'; return 'win'; }
+    if (opts.noLoseReturn) { mode = 'field'; return 'lose'; }
     await fade(true);
     mode = 'field';
     restAll();
-    const r = game.rest || startPos;
-    field.teleport(r.x, r.y, r.dir);
-    field.resetSymbols();
+    const r = game.rest || { map: 'miramar', x: 15.5 * T + 8, y: 12 * T + 12, dir: 'down' };
+    loadMap(r.map, { pos: { x: r.x, y: r.y, dir: r.dir } });
     field.escape();
     await sleep(500);
     await fade(false);
     await say(['……気がつくと、 最後に 休んだ 場所に いた。', 'その たたかいで おきた 覚醒は、 ゆめのように きえてしまった。']);
+    return 'lose';
+  },
+  sleep,
+};
+
+// ───────── タイトル ─────────
+function showTitle() {
+  mode = 'title';
+  const save = latestSave();
+  const cont = document.getElementById('tcontinue');
+  cont.classList.toggle('hidden', !save);
+  if (save) {
+    const m = Math.floor((save.playSec || 0) / 60);
+    document.getElementById('tcontinue').querySelector('small').textContent = `${Math.floor(m / 60)}時間${m % 60}分`;
   }
-  busy = false;
 }
 
-const sleep = ms => new Promise(r => setTimeout(r, ms));
-let startPos;
+async function startGame(fromSave) {
+  title.classList.add('fade');
+  setTimeout(() => title.classList.add('hidden'), 900);
+  input.taps.length = 0;
+  if (fromSave) {
+    loadSave(fromSave);
+    loadMap(game.map, game.pos ? { pos: game.pos } : {});
+  } else {
+    newGame();
+    loadMap('miramar');
+  }
+  mode = 'field';
+  await sleep(600);
+  runEvent(() => (fromSave ? story.onResume(api) : story.onNewGame(api)));
+}
 
 async function boot() {
   try { await document.fonts.load('16px DotGothic16'); } catch (e) { /* フォントがなくても 動く */ }
@@ -143,12 +218,8 @@ async function boot() {
   // iPhoneは 向きを変えたあと 少しおくれて 大きさが決まる
   addEventListener('orientationchange', () => setTimeout(resize, 300));
 
-  const data = buildMiramar();
-  field = new Field(data);
   battleView = new BattleView();
-  startPos = { x: field.player.x, y: field.player.y, dir: field.player.dir };
-  window.__mieru = { get field() { return field; }, game, get mode() { return mode; }, get battle() { return battleView.battle; } }; // テスト用
-  setPlace(data.name);
+  window.__mieru = { get field() { return field; }, game, get mode() { return mode; }, get battle() { return battleView.battle; }, api, get busy() { return busy; } }; // テスト用
   initInput(document.body);
 
   // ホーム画面から ひらいていれば「ホーム画面に追加」の案内は いらない
@@ -156,17 +227,17 @@ async function boot() {
     document.getElementById('a2hs').classList.add('hidden');
   }
 
-  requestAnimationFrame(t => { last = t; frame(t); });
+  showTitle();
+  document.getElementById('tnew').addEventListener('click', async () => {
+    if (latestSave()) {
+      if (!confirm('はじめから あそびますか？\n（つづきの セーブは、 つぎに セーブするまで のこります）')) return;
+    }
+    startGame(null);
+  });
+  document.getElementById('tcontinue').addEventListener('click', () => startGame(latestSave()));
+  menuBtn.addEventListener('click', () => { if (mode === 'field' && !busy && !isTalking()) openMenu(api); });
 
-  title.addEventListener('pointerup', async () => {
-    if (started) return;
-    started = true;
-    input.taps.length = 0;
-    title.classList.add('fade');
-    setTimeout(() => title.remove(), 900);
-    await sleep(700);
-    await talk(data.opening);
-  }, { once: true });
+  requestAnimationFrame(t => { last = t; frame(t); });
 }
 
 boot();

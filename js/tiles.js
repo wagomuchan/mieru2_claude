@@ -6,7 +6,8 @@ const VARIANTS = 4;
 
 // タイルの種類
 //  g 草  f 花  c 石だたみ  d 土  s 砂  p 桟橋  ~ 海
-export const SOLID_TILES = new Set(['~']);
+//  F 石のゆか  W かべ  V まっくら（中には入れない）
+export const SOLID_TILES = new Set(['~', 'W', 'V']);
 
 function px(ctx, x, y, c) { ctx.fillStyle = c; ctx.fillRect(x, y, 1, 1); }
 
@@ -71,7 +72,15 @@ function pier(ctx, r) {
   px(ctx, 2, 1, '#4a3020'); px(ctx, 13, 9, '#4a3020');
 }
 
-const MAKERS = { g: grass, f: flowers, c: cobble, d: dirt, s: sand, p: pier };
+function stoneFloor(ctx, r) {
+  ctx.fillStyle = '#6e6878'; ctx.fillRect(0, 0, T, T);
+  ctx.fillStyle = '#5a5464'; ctx.fillRect(0, 7, T, 1); ctx.fillRect(0, 15, T, 1);
+  ctx.fillRect(r() < 0.5 ? 5 : 11, 0, 1, 7); ctx.fillRect(r() < 0.5 ? 2 : 8, 8, 1, 7);
+  ctx.fillStyle = '#7e788a'; ctx.fillRect(0, 0, T, 1); ctx.fillRect(0, 8, T, 1);
+  for (let i = 0; i < 4; i++) px(ctx, r() * T | 0, r() * T | 0, '#625c6c');
+}
+
+const MAKERS = { g: grass, f: flowers, c: cobble, d: dirt, s: sand, p: pier, F: stoneFloor };
 const cache = {};
 
 export function tileImage(ch, x, y) {
@@ -131,6 +140,25 @@ export function drawSea(ctx, sx, sy, tx, ty, t, map) {
   if (land(tx - 1, ty)) ctx.fillRect(sx, sy + (foam ? 2 : 4), 1, 10);
   if (land(tx + 1, ty)) ctx.fillRect(sx + T - 1, sy + (foam ? 4 : 2), 1, 10);
   if (land(tx, ty + 1)) ctx.fillRect(sx + (foam ? 1 : 3), sy + T - 1, 12, 1);
+}
+
+// かべ：下が ゆかなら 手前の面（レンガ）、そうでなければ 上の面
+export function drawWall(ctx, sx, sy, tx, ty, map) {
+  const below = map.tile(tx, ty + 1);
+  if (below && below !== 'W' && below !== 'V') {
+    ctx.fillStyle = '#8a7a6a'; ctx.fillRect(sx, sy, T, T);
+    ctx.fillStyle = '#6a5a4c';
+    for (let y = 3; y < T; y += 4) ctx.fillRect(sx, sy + y, T, 1);
+    for (let y = 0; y < T; y += 4) {
+      const off = (y / 4) % 2 ? 0 : 4;
+      for (let x = off; x < T; x += 8) ctx.fillRect(sx + x, sy + y, 1, 3);
+    }
+    ctx.fillStyle = '#a89888'; ctx.fillRect(sx, sy, T, 1);
+    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(sx, sy + T - 2, T, 2);
+  } else {
+    ctx.fillStyle = '#3a3044'; ctx.fillRect(sx, sy, T, T);
+    ctx.fillStyle = '#4a3e56'; ctx.fillRect(sx + 1, sy + 1, T - 2, T - 2);
+  }
 }
 
 // 陸のふち（下が海）に、すこし影

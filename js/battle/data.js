@@ -80,6 +80,20 @@ export const ENEMY_DEFS = {
     name: 'ウミボウズ', lv: 18, look: 'umibozu', mul: { hp: 1.5, atk: 1.1, mag: 1.2, spd: 0.8 },
     moves: [[2, { kind: 'attack', verb: 'のしかかってきた！' }], [1, { kind: 'magic', target: 'all', power: 6, verb: 'しおみずを ふきかけた！' }]],
   },
+  hikarikurage: {
+    name: 'ヒカリクラゲ', lv: 26, look: 'kurage', mul: { hp: 0.9, atk: 0.9, mag: 1.3, spd: 1.1 },
+    moves: [[2, { kind: 'attack', verb: 'ふわりと からみついた！' }], [1, { kind: 'magic', target: 'all', power: 8, verb: 'ぴかっと 光って しびれさせた！' }], [1, { kind: 'sleep', verb: 'ゆらゆら ゆれて ねむけを さそった……' }]],
+  },
+  // ボス
+  usokuidori: {
+    name: 'ウソクイドリ', lv: 60, look: 'usokuidori', boss: true, mul: { hp: 4.4, atk: 1.0, def: 1.05, mag: 1.1, spd: 1.0 },
+    moves: [
+      [3, { kind: 'attack', verb: 'するどい くちばしで つついた！' }],
+      [2, { kind: 'attack', target: 'all', power: 0.7, verb: 'おおきく はばたいた！ つよい 風！' }],
+      [2, { kind: 'magic', target: 'all', power: 14, verb: '「ホントウノ コトヲ イエ！」 まことの さけび！' }],
+      [1, { kind: 'drain', stat: 'mp', amount: 6, verb: 'うそを ついばんだ！' }],
+    ],
+  },
   // 黒いシンボル（強い）
   kurohora: {
     name: 'クロホラガイ', lv: 42, look: 'horagai', dark: true, mul: { hp: 1.3, def: 1.3, spd: 0.85 },

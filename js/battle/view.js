@@ -3,7 +3,7 @@
 import { Battle } from './core.js';
 import { SKILLS } from './data.js';
 import { enemyImage } from './enemygfx.js';
-import { game } from '../game.js';
+import { game, hearts, addNaka } from '../game.js';
 import { getFaces } from '../ui.js';
 import { paintPortrait } from '../portraits.js';
 import { PARTY_DEFS } from './data.js';
@@ -16,6 +16,8 @@ const BG = {
   cape: ['#0a2a4a', '#1a5a7a', '#5ad0c0', '#f0f8a0'],
   rocks: ['#3a1a1a', '#7a2a3a', '#e88a4a', '#ffe0a0'],
   black: ['#000000', '#1a0a2a', '#5a1a4a', '#c83a5a'],
+  tower: ['#101a3a', '#2a3a7a', '#7a8ad8', '#e0e8ff'],
+  boss: ['#1a0a0a', '#5a1a0a', '#d8602a', '#ffe070', '#ffffff'],
 };
 
 function makePattern(cols, seed) {
@@ -51,7 +53,7 @@ export class BattleView {
     const cols = BG[area] || BG.beach;
     this.pat1 = makePattern(cols, 0);
     this.pat2 = makePattern([...cols].reverse(), 2);
-    this.battle = new Battle(game.party, enemyIds);
+    this.battle = new Battle(game.party, enemyIds, Math.random, { hearts });
     this.cheerPending = false;
     this.intro = 0.6;
     this.sprites = this.battle.enemies.map(u => ({ u, img: enemyImage(u.def.look, u.def.dark), flash: 0, alpha: 1, dying: false, shake: 0 }));
@@ -84,6 +86,12 @@ export class BattleView {
       await this.wait(0.25);
     }
     await this.wait(0.8);
+    if (this.battle.result === 'win') {
+      // 仲良し度：いっしょに勝つと +1、かばう・回復・つづけてこうげきで +1
+      const ids = game.partyIds;
+      for (let i = 0; i < ids.length; i++) for (let j = i + 1; j < ids.length; j++) addNaka(ids[i], ids[j], 1);
+      for (const [a, b, n] of this.battle.nakaLog) addNaka(a, b, n);
+    }
     this.active = false;
     $('battleui').classList.add('hidden');
     return this.battle.result;

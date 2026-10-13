@@ -56,8 +56,11 @@ export function groupLevel(enemyIds) {
 const STAGE = 0.3; // つよさ変化 1段階の 大きさ
 
 export class Battle {
-  constructor(members, enemyIds, rand = Math.random) {
+  // opts.hearts(a, b): 2人の ハートの数（仲良し度）
+  constructor(members, enemyIds, rand = Math.random, opts = {}) {
     this.rand = rand;
+    this.hearts = opts.hearts || (() => 0);
+    this.nakaLog = [];   // [a, b, 点数]
     this.groupLv = groupLevel(enemyIds);
     // 全滅したら 覚醒を取り消すための 控え
     this.snapshot = members.map(m => JSON.parse(JSON.stringify({ awaken: m.awaken, max: m.max, skills: m.skills })));
@@ -169,7 +172,39 @@ export class Battle {
       plan = { kind: 'attack', verb: 'ふらふらしながら こうげき！', targets: [all[Math.floor(this.rand() * all.length)]] };
     }
     this.run(u, plan, ev);
+    if (u.side === 'ally' && (plan.kind === 'attack' || plan.kind === 'magic')) this.followUp(u, plan, ev);
+    if (u.side === 'ally' && (plan.kind === 'heal' || plan.kind === 'revive')) {
+      for (const t of plan.targets) if (t !== u && t.side === 'ally') this.nakaLog.push([u.id, t.id, 1]);
+    }
     if (u.side === 'ally' && plan.kind !== 'idle') this.tryAwaken(u, ev);
+  }
+
+  // ハート1〜：仲良しの子が つづけて こうげき
+  followUp(u, plan, ev) {
+    const enemies = this.alive(this.enemies);
+    if (!enemies.length) return;
+    for (const a of this.alive(this.allies)) {
+      if (a === u || a.sleep || a.stun) continue;
+      const h = this.hearts(u.id, a.id);
+      if (h >= 1 && this.rand() < Math.min(0.3, 0.06 * h)) {
+        const t = plan.targets.find(x => x.hp > 0 && x.side === 'enemy') || this.pick(enemies);
+        ev.push({ t: 'msg', text: `${a.name}も つづけて こうげき！` });
+        this.physical(a, t, 1, ev);
+        this.nakaLog.push([u.id, a.id, 1]);
+        return;
+      }
+    }
+  }
+
+  // ハート2〜：ピンチの 仲間を かばう
+  cover(t) {
+    if (t.side !== 'ally' || t.hp > t.max.hp * 0.35) return t;
+    for (const a of this.alive(this.allies)) {
+      if (a === t || a.hp < a.max.hp * 0.5 || a.sleep) continue;
+      const h = this.hearts(t.id, a.id);
+      if (h >= 2 && this.rand() < Math.min(0.4, 0.08 * h)) { this.covered = [a, t]; return a; }
+    }
+    return t;
   }
 
   tryAwaken(u, ev) {
@@ -252,7 +287,7 @@ export class Battle {
     let targets;
     if (mv.kind === 'buff') targets = [u];
     else if (mv.target === 'all') targets = allies;
-    else targets = [this.pick(allies)];
+    else targets = [this.cover(this.pick(allies))];
     return { ...mv, targets };
   }
 
@@ -264,6 +299,12 @@ export class Battle {
       ev.push({ t: 'msg', text: `${u.name}は ${p.verb}`, actor: u });
     }
 
+    if (this.covered) {
+      const [a, t] = this.covered;
+      this.covered = null;
+      ev.push({ t: 'msg', text: `${a.name}が ${t.name}を かばった！` });
+      this.nakaLog.push([a.id, t.id, 1]);
+    }
     const targets = p.targets.filter(t => p.kind === 'revive' ? t.hp <= 0 : t.hp > 0);
     switch (p.kind) {
       case 'attack': {
@@ -311,6 +352,13 @@ export class Battle {
           else ev.push({ t: 'msg', text: `${t.name}には きかなかった！` });
         }
         break;
+      case 'drain':
+        for (const t of targets) {
+          const n = Math.min(t.mp, p.amount);
+          t.mp -= n;
+          ev.push({ t: 'mp', unit: t }, { t: 'msg', text: n ? `${t.name}の MPが ${n} へった！` : `${t.name}には きかなかった！` });
+        }
+        break;
       case 'sleep':
         for (const t of targets) {
           if (this.rand() < 0.5) { t.sleep = 3; ev.push({ t: 'msg', text: `${t.name}は ねむってしまった！` }); }
@@ -351,6 +399,15 @@ export class Battle {
       t.sleep = 0; t.confused = 0; t.buffs = {};
       ev.push({ t: 'faint', unit: t });
       ev.push({ t: 'msg', text: t.side === 'enemy' ? `${t.name}を やっつけた！` : `${t.name}は きぜつした……` });
+      // ハート3〜：仲良しの子が 気絶すると、気合いが入る
+      if (t.side === 'ally') {
+        for (const a of this.alive(this.allies)) {
+          if (this.hearts(t.id, a.id) >= 3 && !(a.buffs.atk && a.buffs.atk.stage > 0)) {
+            a.buffs.atk = { stage: 1, turns: 4 };
+            ev.push({ t: 'msg', text: `${a.name}に きあいが はいった！` });
+          }
+        }
+      }
     }
   }
 }

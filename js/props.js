@@ -325,20 +325,133 @@ function drawRock(ctx, o, sx, sy) {
   rect(ctx, sx + 9, sy + 9, 5, 4, '#6a645a');
 }
 
-function drawTent(ctx, o, sx, sy) {
-  // 予約地（いまは ロープと くいだけ）
-  const fw = o.w * T, fh = o.h * T;
-  for (const [x, y] of [[0, 0], [fw - 3, 0], [0, fh - 4], [fw - 3, fh - 4]]) {
-    rect(ctx, sx + x, sy + y - 6, 3, 9, INK); rect(ctx, sx + x + 1, sy + y - 5, 1, 7, '#a87040');
+// 旅の一座の テント（しましま）
+function drawTent(ctx, o, sx, sy, t) {
+  const fw = o.w * T, fh = o.h * T, base = sy + fh;
+  const big = o.big;
+  const c1 = o.color || '#d84a5a', c2 = '#fff4e4';
+  const top = sy - (big ? 30 : 16);
+  ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.fillRect(sx + 2, base - 1, fw, 3);
+  // 下の かべ
+  const wallTop = base - (big ? 20 : 14);
+  rect(ctx, sx, wallTop, fw, base - wallTop, INK);
+  for (let x = 1; x < fw - 1; x++) {
+    ctx.fillStyle = (Math.floor(x / 6) % 2) ? c2 : c1;
+    ctx.fillRect(sx + x, wallTop + 1, 1, base - wallTop - 2);
   }
-  ctx.fillStyle = '#e8dcc0';
-  ctx.fillRect(sx + 3, sy - 4, fw - 6, 1); ctx.fillRect(sx + 3, sy + fh - 2, fw - 6, 1);
+  // 屋根（三角）
+  const cx = sx + fw / 2;
+  for (let y = 0; y <= wallTop - top; y++) {
+    const half = Math.round((fw / 2 + 2) * (y / (wallTop - top)));
+    rect(ctx, cx - half - 1, top + y, half * 2 + 2, 1, INK);
+    for (let x = -half; x < half; x++) {
+      const stripe = Math.floor((x / Math.max(1, half)) * 4 + 8) % 2;
+      ctx.fillStyle = stripe ? c1 : c2;
+      ctx.fillRect(cx + x, top + y, 1, 1);
+    }
+  }
+  // 旗
+  rect(ctx, cx, top - 10, 1, 10, INK);
+  const wave = Math.floor(t * 4) % 2;
+  rect(ctx, cx + 1, top - 10, 6, 3 + wave, '#ffd040');
+  // 入口
+  const dw = big ? 14 : 10;
+  rect(ctx, cx - dw / 2 - 1, base - (big ? 16 : 11), dw + 2, big ? 16 : 11, INK);
+  rect(ctx, cx - dw / 2, base - (big ? 15 : 10), dw, big ? 15 : 10, '#3a1a2a');
+  rect(ctx, cx - dw / 2, base - (big ? 15 : 10), 3, big ? 15 : 10, c1);
+  rect(ctx, cx + dw / 2 - 3, base - (big ? 15 : 10), 3, big ? 15 : 10, c1);
+}
+
+// 一座の 馬車
+function drawWagon(ctx, o, sx, sy) {
+  const fw = o.w * T, base = sy + o.h * T;
+  ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.fillRect(sx + 2, base - 1, fw, 3);
+  // ほろ
+  box(ctx, sx + 1, base - 30, fw - 2, 20, '#f4ead0');
+  for (let x = sx + 6; x < sx + fw - 4; x += 8) rect(ctx, x, base - 29, 1, 18, '#d8c8a0');
+  rect(ctx, sx + 2, base - 29, fw - 4, 2, '#fffaea');
+  // 荷台
+  box(ctx, sx, base - 12, fw, 7, '#8a5a32');
+  rect(ctx, sx + 1, base - 11, fw - 2, 1, '#aa7a4a');
+  // 車輪
+  for (const wx of [sx + 7, sx + fw - 8]) {
+    box(ctx, wx - 5, base - 9, 10, 10, '#5a3a20');
+    rect(ctx, wx - 1, base - 5, 2, 2, '#c8a060');
+  }
+  // かんばん
+  box(ctx, sx + fw / 2 - 12, base - 26, 24, 9, '#4a2a5a');
+  rect(ctx, sx + fw / 2 - 9, base - 23, 18, 1, '#ffd040'); rect(ctx, sx + fw / 2 - 7, base - 21, 14, 1, '#ffd040');
+}
+
+// ステージ（芝居の 舞台）
+function drawStage(ctx, o, sx, sy) {
+  const fw = o.w * T, fh = o.h * T;
+  ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.fillRect(sx + 2, sy + fh - 1, fw, 3);
+  box(ctx, sx, sy + 4, fw, fh - 4, '#a8703a');
+  for (let y = sy + 8; y < sy + fh - 6; y += 4) rect(ctx, sx + 1, y, fw - 2, 1, '#8a5a2a');
+  rect(ctx, sx + 1, sy + 5, fw - 2, 2, '#c89058');
+  // 前の 幕
+  box(ctx, sx, sy + fh - 7, fw, 7, '#8a1a2a');
+  for (let x = sx + 3; x < sx + fw - 2; x += 6) rect(ctx, x, sy + fh - 6, 2, 5, '#b83040');
+  // ランプ
+  for (let x = sx + 8; x < sx + fw - 4; x += 24) rect(ctx, x, sy + fh - 9, 3, 2, '#ffe080');
+}
+
+// 階段（上り・下り）
+function drawStairs(ctx, o, sx, sy) {
+  const up = o.dir === 'up';
+  for (let i = 0; i < 4; i++) {
+    const y = sy + i * 4;
+    const shade = up ? 140 + i * 18 : 200 - i * 30;
+    ctx.fillStyle = `rgb(${shade},${shade - 10},${shade - 20})`;
+    ctx.fillRect(sx + 1, y, T - 2, 4);
+    ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(sx + 1, y + 3, T - 2, 1);
+  }
+  rect(ctx, sx, sy, 1, T, INK); rect(ctx, sx + T - 1, sy, 1, T, INK);
+}
+
+// 灯台の 大きなレンズ
+function drawLens(ctx, o, sx, sy, t) {
+  const cx = sx + o.w * T / 2, base = sy + o.h * T;
+  box(ctx, cx - 14, base - 10, 28, 10, '#5a5a6a');
+  const glow = o.off ? 0.25 : 0.7 + 0.3 * Math.sin(t * 2);
+  box(ctx, cx - 11, base - 36, 22, 27, '#3a3a4a');
+  ctx.fillStyle = `rgba(255, 230, 120, ${glow})`; ctx.fillRect(cx - 9, base - 34, 18, 23);
+  for (let y = base - 32; y < base - 12; y += 4) rect(ctx, cx - 9, y, 18, 1, `rgba(255,255,255,${glow * 0.6})`);
+  rect(ctx, cx - 1, base - 34, 2, 23, '#fff8d0');
+}
+
+// 大きな 鳥の巣
+function drawNest(ctx, o, sx, sy) {
+  const fw = o.w * T, base = sy + o.h * T;
+  for (let i = 0; i < 40; i++) {
+    const a = (i / 40) * Math.PI * 2;
+    const x = sx + fw / 2 + Math.cos(a) * (fw / 2 - 3), y = base - 10 + Math.sin(a) * 7;
+    rect(ctx, Math.round(x - 3), Math.round(y), 7, 2, i % 3 ? '#8a6a3a' : '#5a4020');
+  }
+  rect(ctx, sx + 8, base - 13, fw - 16, 6, '#3a2a14');
+  // 光る ものが まざっている（町の人の 嘘の かけら？）
+  for (const [x, y] of [[0.3, -9], [0.6, -11], [0.75, -8]]) rect(ctx, sx + fw * x, base + y, 2, 2, '#ffe070');
+}
+
+// 窓（かべに はりつける）
+function drawWindow(ctx, o, sx, sy, t) {
+  box(ctx, sx + 3, sy + 2, 10, 10, '#1a2a5a');
+  ctx.fillStyle = o.night ? '#2a3a7a' : '#8ac0f0'; ctx.fillRect(sx + 4, sy + 3, 8, 8);
+  rect(ctx, sx + 7, sy + 3, 2, 8, INK);
+}
+
+function drawBed(ctx, o, sx, sy) {
+  box(ctx, sx + 1, sy, T * o.w - 2, T * o.h - 1, '#8a5a32');
+  box(ctx, sx + 3, sy + 2, T * o.w - 6, T * o.h - 6, '#e8e0f0');
+  rect(ctx, sx + 4, sy + 3, T * o.w - 8, 4, '#ffffff');
 }
 
 const DRAW = {
   house: drawHouse, tree: drawTree, fountain: drawFountain, stall: drawStall,
   lighthouse: drawLighthouse, lamp: drawLamp, barrel: drawBarrel, crate: drawCrate,
   sign: drawSign, bench: drawBench, boat: drawBoat, rock: drawRock, tent: drawTent,
+  wagon: drawWagon, stage: drawStage, stairs: drawStairs, lens: drawLens, nest: drawNest, window: drawWindow, bed: drawBed,
 };
 
 export function drawProp(ctx, o, sx, sy, t) {
@@ -347,4 +460,4 @@ export function drawProp(ctx, o, sx, sy, t) {
 }
 
 // どの種類が ふみこめないか（boat は海の上なので不要、tent は ロープだけ）
-export const PASSABLE_PROPS = new Set(['boat', 'tent']);
+export const PASSABLE_PROPS = new Set(['boat', 'stairs', 'window']);

@@ -112,8 +112,9 @@ html, body {
 .btn:disabled { opacity: .4; }
 .btn small { font-size: 12px; color: var(--accent); }
 
+#screen { position: relative; }
 #fader {
-  position: fixed;
+  position: absolute;
   inset: 0;
   background: #000;
   opacity: 0;
@@ -296,3 +297,61 @@ html, body {
   text-align: center;
   color: var(--dim);
 }
+
+/* ───────── タイトルの ボタン ───────── */
+#tbtns { display: flex; flex-direction: column; gap: 14px; min-width: 220px; }
+#tbtns .btn { font-size: 20px; padding: 14px 18px; }
+#title.hidden { display: none; }
+
+/* ───────── メニュー ───────── */
+#menubtn {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  font-size: 15px;
+  padding: 10px 18px;
+}
+#menu {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  max-width: 480px;
+  margin: 0 auto;
+  background: rgba(8, 6, 20, .97);
+  display: flex;
+  flex-direction: column;
+  padding: calc(env(safe-area-inset-top) + 12px) 12px calc(env(safe-area-inset-bottom) + 12px);
+}
+#mtabs { display: flex; gap: 6px; }
+#mtabs button { flex: 1; font-size: 15px; padding: 10px 4px; }
+#mtabs button.on { background: #fff; color: #000; }
+#mbody {
+  flex: 1;
+  overflow-y: auto;
+  margin: 12px 0;
+  padding: 14px;
+  border: 3px solid #fff;
+  border-radius: 8px;
+  background: #000;
+  font-size: 15px;
+  line-height: 1.7;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+}
+#mclose { font-size: 17px; }
+.mh { color: var(--accent); font-size: 14px; margin: 14px 0 6px; }
+.mh:first-child { margin-top: 0; }
+.goal { white-space: pre-wrap; }
+.diary-item { display: block; width: 100%; text-align: left; margin: 6px 0; font-size: 15px; }
+.diary-text { white-space: pre-wrap; font-size: 15px; line-height: 1.9; }
+.member { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin-bottom: 18px; }
+.member canvas { grid-row: span 2; image-rendering: pixelated; }
+.member .mname { color: var(--accent); }
+.member .mstats { font-size: 13px; color: #ddd; }
+.member .mskills { grid-column: 1 / -1; font-size: 13px; color: var(--dim); }
+.pair { display: flex; align-items: center; gap: 8px; margin: 10px 0; }
+.pair canvas { image-rendering: pixelated; }
+.pair .hearts { color: #ff6a9a; letter-spacing: 1px; font-size: 14px; }
+.pair .hearts .off { color: #4a3a50; }
+.mbtn { display: block; width: 100%; margin: 10px 0; }
+.mnote { font-size: 12px; color: var(--dim); }

@@ -1,5 +1,5 @@
 // マップを歩く部分
-import { T, tileImage, drawSea, drawLandEdge, SOLID_TILES } from './tiles.js';
+import { T, tileImage, drawSea, drawLandEdge, drawWall, SOLID_TILES } from './tiles.js';
 import { drawProp, PASSABLE_PROPS } from './props.js';
 import { buildCharacter, buildYokai, SW, SH } from './sprites.js';
 import { CHARS } from './chars.js';
@@ -15,35 +15,84 @@ const REACH = 16;         // しらべられる距離
 
 const DIRS = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] };
 
+// キャラの絵は 1回だけ作って つかいまわす
+const lookCache = {};
+export const look = id => (lookCache[id] ||= buildCharacter(CHARS[id]));
+
 export class Field {
-  constructor(data) {
+  // data: マップのデータ　opts: { followers: ['elesia', ...], start: {x, y, dir}（ドット単位） }
+  constructor(data, opts = {}) {
     this.data = data;
+    this.id = data.id;
     this.w = data.w; this.h = data.h;
     this.rows = data.tiles;
     this.objects = data.objects.map(o => ({ ...o, talkCount: 0 }));
     this.rand = rng(4242);
     this.t = 0;
+    this.tint = data.tint || null;
+    this.emotes = [];
 
-    const look = id => buildCharacter(CHARS[id]);
-    this.player = this.makeActor({ x: data.start.x, y: data.start.y, dir: data.start.dir }, look('shimeru'));
+    this.player = this.makeActor({ id: 'shimeru', x: data.start.x, y: data.start.y, dir: data.start.dir }, look('shimeru'));
     this.player.isPlayer = true;
-    const cache = {};
-    this.npcs = data.npcs.map(n => this.makeActor(n, cache[n.look] ||= look(n.look)));
+    if (opts.start) Object.assign(this.player, opts.start);
+    this.npcs = (data.npcs || []).map(n => this.makeActor(n, n.look ? look(n.look) : null));
     const yk = buildYokai();
-    this.yokai = data.yokai.map(y => Object.assign(this.makeActor(y, null), { yokai: true, frames2: yk }));
+    this.yokaiFrames = yk;
+    this.yokai = (data.yokai || []).map(y => Object.assign(this.makeActor(y, null), { yokai: true, frames2: yk }));
     this.actors = [this.player, ...this.npcs, ...this.yokai];
     // うしろを ついてくる 仲間
     this.trail = [];
-    this.followers = (data.followers || []).map((id, i) => ({ id, frames: look(id), gap: 14 * (i + 1), x: this.player.x, y: this.player.y, dir: 'down', walkDist: 0, moving: false }));
+    this.followers = [];
+    this.setFollowers(opts.followers || []);
     // マップ上の 妖怪シンボル（ぶつかると 戦闘）
     this.symbols = (data.symbols || []).map(d => {
       const a = this.makeActor(d, null);
       return Object.assign(a, { sym: true, img: enemyImage(AREA_LOOK[d.area], d.area === 'black'), sub: 0 });
     });
-    this.safe = 0;
+    // 大きな 妖怪（ボスなど。マップに 置くだけ）
+    this.bigs = (data.bigs || []).map(b => ({ ...b, img: enemyImage(b.look), x: b.x * T + 8, y: b.y * T + 12 }));
+    this.safe = 1;
     this.encounter = null;
+    this.warp = null;
+    this.trigger = null;
+    this.lastTile = this.tileKey();
     this.cam = { x: 0, y: 0 };
     this.target = null;
+  }
+
+  setFollowers(ids) {
+    const p = this.player;
+    this.followers = ids.map((id, i) => ({ id, frames: look(id), gap: 14 * (i + 1), x: p.x, y: p.y, dir: p.dir, walkDist: 0, moving: false }));
+    this.trail = [];
+  }
+
+  tileKey() { return Math.floor(this.player.x / T) + ',' + Math.floor((this.player.y - 2) / T); }
+
+  // 人を さがす（id で）
+  actor(id) {
+    if (id === 'shimeru' || id === 'me') return this.player;
+    return this.actors.find(a => a.id === id) || this.followers.find(f => f.id === id) || null;
+  }
+
+  // イベント用：人を 出す／消す
+  addActor(def) {
+    const a = def.yokai ? Object.assign(this.makeActor(def, null), { yokai: true, frames2: this.yokaiFrames }) : this.makeActor(def, look(def.look));
+    this.actors.push(a);
+    return a;
+  }
+  removeActor(id) { this.actors = this.actors.filter(a => a.id !== id || a.isPlayer); }
+
+  // イベント用：タイル (tx, ty) まで 歩かせる。着いたら おわる
+  walkTo(id, tx, ty, speed = 1) {
+    const a = this.actor(id);
+    if (!a) return Promise.resolve();
+    return new Promise(resolve => { a.script = { gx: tx * T + 8, gy: ty * T + 12, speed, sub: 0, resolve }; });
+  }
+
+  // イベント用：頭の上に マーク（! ? ♪ … ♥ 💧）
+  emote(id, kind, sec = 1.2) {
+    const a = this.actor(id);
+    if (a) this.emotes.push({ a, kind, until: this.t + sec });
   }
 
   // ワープ（休んだあと・全滅したあと）
@@ -138,8 +187,8 @@ export class Field {
 
   tick(stick, frozen) {
     const p = this.player;
-    p.moving = false;
-    if (!frozen && stick) {
+    if (!p.script) p.moving = false;
+    if (!frozen && stick && !p.script) {
       // 8方向に そろえる
       const [sx, sy] = stick;
       const oct = Math.round(Math.atan2(sy, sx) / (Math.PI / 4));
@@ -152,13 +201,45 @@ export class Field {
       p.moving = true;
       if (p.x !== bx || p.y !== by) { this.trail.push({ x: p.x, y: p.y, dir: p.dir }); if (this.trail.length > 80) this.trail.shift(); }
     }
-    for (const a of this.actors) if (!a.isPlayer) this.updateNpc(a, frozen);
+    for (const a of [...this.actors, ...this.followers]) if (a.script) this.runScript(a);
+    for (const a of this.actors) if (!a.isPlayer && !a.script) this.updateNpc(a, frozen);
     this.updateFollowers(p.moving);
-    if (!frozen) this.updateSymbols();
+    if (!frozen) {
+      this.updateSymbols();
+      // ワープや イベントの 場所に 入ったか
+      const k = this.tileKey();
+      if (k !== this.lastTile) {
+        this.lastTile = k;
+        const [tx, ty] = k.split(',').map(Number);
+        const inRect = r => tx >= r.x && tx < r.x + (r.w || 1) && ty >= r.y && ty < r.y + (r.h || 1);
+        this.warp = (this.data.warps || []).find(inRect) || null;
+        this.trigger = (this.data.triggers || []).find(inRect) || null;
+      }
+    }
+  }
+
+  runScript(a) {
+    const sc = a.script;
+    sc.sub += sc.speed;
+    a.moving = true;
+    while (sc.sub >= 1) {
+      sc.sub -= 1;
+      const dx = Math.sign(sc.gx - a.x), dy = dx ? 0 : Math.sign(sc.gy - a.y);
+      if (!dx && !dy) {
+        a.script = null; a.moving = false;
+        sc.resolve();
+        return;
+      }
+      a.x += dx; a.y += dy;
+      a.dir = this.faceFrom(dx, dy);
+      a.walkDist++;
+      if (a.isPlayer) { this.trail.push({ x: a.x, y: a.y, dir: a.dir }); if (this.trail.length > 80) this.trail.shift(); }
+    }
   }
 
   updateFollowers(moving) {
     for (const f of this.followers) {
+      if (f.script) continue;
       const at = this.trail[this.trail.length - 1 - f.gap];
       const before = f.x + ',' + f.y;
       if (at) { f.x = at.x; f.y = at.y; f.dir = at.dir; }
@@ -197,6 +278,7 @@ export class Field {
 
   updateNpc(a, frozen) {
     a.moving = false;
+    if (a.hidden) return;
     if (!a.wander || frozen) return;
     if (a.goal) {
       const vx = a.goal[0] - a.x, vy = a.goal[1] - a.y;
@@ -229,7 +311,7 @@ export class Field {
     // 人には、屋台の カウンターごしにも 話しかけられる
     const qx2 = p.x + fx * 28, qy2 = p.y - 2 + fy * 28;
     for (const a of this.actors) {
-      if (a.isPlayer || !a.talk) continue;
+      if (a.isPlayer || !a.talk || a.hidden) continue;
       const d = Math.min(Math.hypot(a.x - qx, a.y - 2 - qy), Math.hypot(a.x - qx2, a.y - 2 - qy2) + 2);
       if (d < bestD) { best = a; bestD = d; }
     }
@@ -266,7 +348,7 @@ export class Field {
     this.cam.x = Math.round(cx); this.cam.y = Math.round(cy);
     const ox = -this.cam.x, oy = -this.cam.y;
 
-    ctx.fillStyle = '#3d7bd2'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = this.data.bg || '#3d7bd2'; ctx.fillRect(0, 0, W, H);
     const tx0 = Math.floor(this.cam.x / T), ty0 = Math.floor(this.cam.y / T);
     const tx1 = Math.ceil((this.cam.x + W) / T), ty1 = Math.ceil((this.cam.y + H) / T);
     for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
@@ -274,6 +356,14 @@ export class Field {
       if (c === null) continue;
       const sx = tx * T + ox, sy = ty * T + oy;
       if (c === '~') drawSea(ctx, sx, sy, tx, ty, this.t, this);
+      else if (c === 'W') drawWall(ctx, sx, sy, tx, ty, this);
+      else if (c === 'V') {
+        ctx.fillStyle = this.data.bg || '#0a0812'; ctx.fillRect(sx, sy, T, T);
+        if (this.data.stars) {
+          const h = (tx * 73856093 ^ ty * 19349663) >>> 0;
+          if (h % 3 === 0) { ctx.fillStyle = (h >> 4) % 4 ? '#8a8ac8' : '#ffffff'; ctx.fillRect(sx + (h >> 8) % 16, sy + (h >> 12) % 16, 1, 1); }
+        }
+      }
       else {
         ctx.drawImage(tileImage(c, tx, ty), sx, sy);
         drawLandEdge(ctx, sx, sy, tx, ty, this);
@@ -283,15 +373,19 @@ export class Field {
     // 奥から順に描く（手前のものが 上にくる）
     const list = [];
     for (const o of this.objects) list.push({ y: (o.y + o.h) * T - 1, o });
-    for (const a of this.actors) list.push({ y: a.y, a });
+    for (const a of this.actors) if (!a.hidden) list.push({ y: a.y, a });
     for (const f of this.followers) list.push({ y: f.y - 0.5, a: f });
     for (const sy of this.symbols) if (!sy.gone) list.push({ y: sy.y, a: sy });
+    for (const b of this.bigs) if (!b.hidden) list.push({ y: b.y, big: b });
     list.sort((m, n) => m.y - n.y);
     for (const it of list) {
       if (it.o) {
         const sx = it.o.x * T + ox, sy = it.o.y * T + oy;
         if (sx > W + 64 || sx < -96 || sy > H + 48 || sy < -120) continue;
         drawProp(ctx, it.o, sx, sy, this.t);
+      } else if (it.big) {
+        const b = it.big, bob = Math.round(Math.sin(this.t * 2) * 1.5);
+        ctx.drawImage(b.img, Math.round(b.x + ox - b.img.width / 2), Math.round(b.y + oy - b.img.height + bob));
       } else this.drawActor(ctx, it.a, ox, oy);
     }
 
@@ -299,6 +393,19 @@ export class Field {
     ctx.globalAlpha = 0.35;
     this.drawActor(ctx, p, ox, oy, true);
     ctx.globalAlpha = 1;
+
+    // あかりの 色（夕方・夜・うす暗い）
+    if (this.tint) {
+      ctx.fillStyle = TINTS[this.tint] || this.tint;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    // 頭の上の マーク
+    this.emotes = this.emotes.filter(e => e.until > this.t);
+    for (const e of this.emotes) {
+      const hy = e.a.yokai ? 20 : 30;
+      drawEmote(ctx, Math.round(e.a.x + ox), Math.round(e.a.y + oy - hy), e.kind, this.t);
+    }
 
     // しらべられるものの 上に「！」
     if (this.target) {
@@ -341,6 +448,35 @@ export class Field {
     const img = a.frames[a.dir][step];
     ctx.drawImage(img, x - SW / 2, y - SH + 1);
   }
+}
+
+const TINTS = {
+  evening: 'rgba(255, 110, 60, .22)',
+  night: 'rgba(16, 18, 70, .55)',
+  dim: 'rgba(10, 6, 30, .35)',
+};
+
+// 7×7 の 小さなマーク
+const EMOTE_GLYPH = {
+  '!': ['...r...', '...r...', '...r...', '...r...', '.......', '...r...', '.......'],
+  '?': ['..bbb..', '.b...b.', '.....b.', '...bb..', '...b...', '.......', '...b...'],
+  '♪': ['...kkk.', '...k.k.', '...k.k.', '...k...', '.kkk...', 'kkkk...', '.kk....'],
+  '…': ['.......', '.......', '.......', '.......', 'k.k.k..', '.......', '.......'],
+  '♥': ['.pp.pp.', 'ppppppp', 'ppppppp', '.ppppp.', '..ppp..', '...p...', '.......'],
+  '💧': ['...c...', '..ccc..', '.ccccc.', '.ccccc.', '..ccc..', '.......', '.......'],
+};
+const EMOTE_COL = { r: '#e8466a', b: '#3a6ad8', k: '#2b1d2e', p: '#ff5a8a', c: '#6ab0ff' };
+
+function drawEmote(ctx, x, y, kind, t) {
+  const g = EMOTE_GLYPH[kind] || EMOTE_GLYPH['!'];
+  const bob = Math.round(Math.sin(t * 6) * 1);
+  const bx = x - 6, by = y - 12 + bob;
+  ctx.fillStyle = '#2b1d2e'; ctx.fillRect(bx - 1, by - 1, 13, 13);
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(bx, by, 11, 11);
+  ctx.fillStyle = '#2b1d2e'; ctx.fillRect(bx + 3, by + 11, 3, 2);
+  g.forEach((row, j) => {
+    for (let i = 0; i < 7; i++) if (row[i] !== '.') { ctx.fillStyle = EMOTE_COL[row[i]]; ctx.fillRect(bx + 2 + i, by + 2 + j, 1, 1); }
+  });
 }
 
 export function talkPoint(o) {

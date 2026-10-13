@@ -17,7 +17,7 @@
 </head>
 <body>
 <div id="app">
-  <div id="screen"><canvas id="game"></canvas></div>
+  <div id="screen"><canvas id="game"></canvas><div id="fader"></div></div>
   <div id="panel">
     <div id="place"></div>
     <div id="msg" class="win hidden">
@@ -38,14 +38,22 @@
         <button id="bfast" class="btn">はやおくり <small id="bfastx">×1</small></button>
       </div>
     </div>
-    <div id="version">試作2</div>
+    <button id="menubtn" class="btn hidden">メニュー</button>
+    <div id="version">第一章</div>
   </div>
-  <div id="fader"></div>
+</div>
+<div id="menu" class="hidden">
+  <div id="mtabs"></div>
+  <div id="mbody"></div>
+  <button id="mclose" class="btn">とじる</button>
 </div>
 <div id="stick"><div id="knob"></div></div>
 <div id="title">
   <div id="logo">見える<span>2</span></div>
-  <div id="tapstart">タップして はじめる</div>
+  <div id="tbtns">
+    <button id="tcontinue" class="btn hidden">つづきから <small></small></button>
+    <button id="tnew" class="btn">はじめから</button>
+  </div>
   <div id="a2hs">Safariの 共有ボタン →「ホーム画面に追加」で<br>アプリのように あそべます</div>
 </div>
 <script type="module" src="js/main.js"></script>

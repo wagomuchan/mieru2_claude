@@ -254,6 +254,27 @@ const HAIR = {
   },
 };
 
+// 顔の 見えない フード
+const HOOD_FULL = r => [r, '..hhhhhhhhhhhh..'];
+HAIR.hood = {
+  down: { back: [], front: [
+    [1, '.....hhhhhh.....'], [2, '....hHhhhhhh....'], [3, '...hHhhhhhhhh...'],
+    ...range(4, 8).map(HOOD_FULL),
+    [8, '..hhhddddddhhh..'], [9, '..hhddddddddhh..'], [10, '..hhddddddddhh..'], [11, '..hhddddddddhh..'], [12, '..hhhddddddhhh..'],
+    [13, '..hhhhhhhhhhhh..'], [14, '...hhhhhhhhhh...'],
+  ] },
+  up: { back: [], front: [
+    [1, '.....hhhhhh.....'], [2, '....hhhhhhhh....'], [3, '...hhhhhhhhhh...'],
+    ...range(4, 14).map(HOOD_FULL), [14, '...hhhhhhhhhh...'],
+  ] },
+  right: { back: [], front: [
+    [1, '.....hhhhhh.....'], [2, '....hhhhhhHh....'], [3, '...hhhhhhhhHh...'],
+    ...range(4, 8).map(HOOD_FULL),
+    [8, '..hhhhhhhddhhh..'], [9, '..hhhhhhddddhh..'], [10, '..hhhhhhddddhh..'], [11, '..hhhhhhddddhh..'], [12, '..hhhhhhhddhhh..'],
+    [13, '..hhhhhhhhhhhh..'], [14, '...hhhhhhhhhh...'],
+  ] },
+};
+
 // かざり
 const ACC = {
   bigRibbon: {
