@@ -195,7 +195,7 @@ export function buildMiramar() {
           '見回りの 兵士|さいきん、 「みえる子」を さがしている という 連中が、 町に 出入りしているらしい。',
           '見回りの 兵士|……わたしは くわしくは 知らん。 知りたくも ないがね。'],
       ] },
-    { id: 'inn', look: 'inn', x: 4, y: 27, dir: 'down', name: '宿屋の おかみ',
+    { id: 'inn', look: 'inn', x: 4, y: 27, dir: 'down', name: '宿屋の おかみ', action: 'inn',
       talk: [
         ['宿屋の おかみ|宿屋 「かもめ亭」へ ようこそ。 ……あら、 シメールちゃん。',
           '宿屋の おかみ|泊まる お金は ある？',
@@ -220,10 +220,21 @@ export function buildMiramar() {
     tiles: g.map(r => r.join('')),
     objects, npcs, yokai,
     start: { x: 21, y: 21, dir: 'down' },
+    // 試作2：仲間が ついてくる（物語では とちゅうで 仲間になる）
+    followers: ['elesia', 'meina'],
+    // 試作2：ためしの 妖怪シンボル（置き場所は 物語を作るときに 決めなおす）
+    symbols: [
+      { x: 4, y: 29, area: 'beach' }, { x: 10, y: 29, area: 'beach' }, { x: 16, y: 30, area: 'beach' },
+      { x: 40, y: 26, area: 'cape' }, { x: 35, y: 31, area: 'cape' }, { x: 41, y: 30, area: 'cape' },
+      { x: 2, y: 10, area: 'rocks' }, { x: 11, y: 12, area: 'rocks' },
+      { x: 1, y: 29, area: 'black' },
+    ],
     opening: [
       `${ME}|（きょうも いい てんき。）`,
       `${ME}|（カモが……じゃなくて、 おきゃくさんが たくさん 来そうな 日。）`,
       `${ME}|（市場で 店を ひらく まえに、 町を ひとまわり してこようかな。）`,
+      'エレシア|（試作2：エレシアと メイナも いっしょに 歩けます。 砂浜や みさきの 妖怪に ぶつかると 戦闘です。）',
+      'メイナ@smile|（宿屋の おかみに 話しかけると、 休めるよ！）',
     ],
   };
 }

@@ -21,13 +21,26 @@
   <div id="panel">
     <div id="place"></div>
     <div id="msg" class="win hidden">
-      <div id="msgname"></div>
-      <div id="msgtext"></div>
+      <canvas id="msgface" class="hidden"></canvas>
+      <div id="msgbody">
+        <div id="msgname"></div>
+        <div id="msgtext"></div>
+      </div>
       <div id="msgnext">▼</div>
+      <div id="choices" class="hidden"></div>
     </div>
     <div id="hint">ゆびを すべらせて あるく<br>タップで しらべる・はなす</div>
-    <div id="version">試作1</div>
+    <div id="battleui" class="hidden">
+      <div id="pboxes"></div>
+      <div id="bmsg" class="win"><div id="bmsgtext"></div></div>
+      <div id="bbtns">
+        <button id="bcheer" class="btn">おうえん <small id="bcheerleft"></small></button>
+        <button id="bfast" class="btn">はやおくり <small id="bfastx">×1</small></button>
+      </div>
+    </div>
+    <div id="version">試作2</div>
   </div>
+  <div id="fader"></div>
 </div>
 <div id="stick"><div id="knob"></div></div>
 <div id="title">

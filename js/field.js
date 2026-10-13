@@ -4,6 +4,8 @@ import { drawProp, PASSABLE_PROPS } from './props.js';
 import { buildCharacter, buildYokai, SW, SH } from './sprites.js';
 import { CHARS } from './chars.js';
 import { clamp, rng } from './util.js';
+import { enemyImage } from './battle/enemygfx.js';
+import { AREA_LOOK } from './battle/areas.js';
 
 // ガタつかないよう、1/60秒ごとに「きっちり整数ドット」ずつ動かす
 const TICK = 1 / 60;
@@ -30,9 +32,34 @@ export class Field {
     const yk = buildYokai();
     this.yokai = data.yokai.map(y => Object.assign(this.makeActor(y, null), { yokai: true, frames2: yk }));
     this.actors = [this.player, ...this.npcs, ...this.yokai];
+    // うしろを ついてくる 仲間
+    this.trail = [];
+    this.followers = (data.followers || []).map((id, i) => ({ id, frames: look(id), gap: 14 * (i + 1), x: this.player.x, y: this.player.y, dir: 'down', walkDist: 0, moving: false }));
+    // マップ上の 妖怪シンボル（ぶつかると 戦闘）
+    this.symbols = (data.symbols || []).map(d => {
+      const a = this.makeActor(d, null);
+      return Object.assign(a, { sym: true, img: enemyImage(AREA_LOOK[d.area], d.area === 'black'), sub: 0 });
+    });
+    this.safe = 0;
+    this.encounter = null;
     this.cam = { x: 0, y: 0 };
     this.target = null;
   }
+
+  // ワープ（休んだあと・全滅したあと）
+  teleport(x, y, dir) {
+    Object.assign(this.player, { x, y, dir });
+    this.trail = [];
+    for (const f of this.followers) Object.assign(f, { x, y, dir });
+  }
+
+  resetSymbols() {
+    for (const s of this.symbols) Object.assign(s, { x: s.homeX, y: s.homeY, gone: false, goal: null });
+  }
+
+  // 戦いに勝ったら シンボルは しばらく いなくなる
+  defeat(sym) { sym.gone = true; sym.respawnAt = this.t + 40; this.safe = 2; }
+  escape() { this.safe = 2.5; }
 
   makeActor(def, frames) {
     const x = def.x * T + 8, y = def.y * T + 12;
@@ -119,11 +146,53 @@ export class Field {
       const dx = Math.round(Math.cos(oct * Math.PI / 4)), dy = Math.round(Math.sin(oct * Math.PI / 4));
       // ななめのときは、いま向いている向きを なるべく保つ
       if (!(dx && dy && (DIRS[p.dir][0] === dx || DIRS[p.dir][1] === dy))) p.dir = this.faceFrom(dx, dy);
+      const bx = p.x, by = p.y;
       for (let i = 0; i < WALK_STEP; i++) this.move(p, dx, dy);
       p.walkDist += WALK_STEP;
       p.moving = true;
+      if (p.x !== bx || p.y !== by) { this.trail.push({ x: p.x, y: p.y, dir: p.dir }); if (this.trail.length > 80) this.trail.shift(); }
     }
     for (const a of this.actors) if (!a.isPlayer) this.updateNpc(a, frozen);
+    this.updateFollowers(p.moving);
+    if (!frozen) this.updateSymbols();
+  }
+
+  updateFollowers(moving) {
+    for (const f of this.followers) {
+      const at = this.trail[this.trail.length - 1 - f.gap];
+      const before = f.x + ',' + f.y;
+      if (at) { f.x = at.x; f.y = at.y; f.dir = at.dir; }
+      f.moving = moving && before !== f.x + ',' + f.y;
+      if (f.moving) f.walkDist++;
+    }
+  }
+
+  updateSymbols() {
+    if (this.safe > 0) this.safe -= TICK;
+    const p = this.player;
+    for (const s of this.symbols) {
+      if (s.gone) {
+        if (this.t > s.respawnAt && Math.hypot(s.homeX - p.x, s.homeY - p.y) > 140) Object.assign(s, { gone: false, x: s.homeX, y: s.homeY, goal: null });
+        continue;
+      }
+      const d = Math.hypot(p.x - s.x, p.y - s.y);
+      if (this.safe <= 0 && d < 15) { this.encounter = s; return; }
+      const chase = this.safe <= 0 && d < 64;
+      s.sub += chase ? (s.area === 'black' ? 0.75 : 0.6) : 0.35;
+      if (chase) s.goal = [p.x, p.y];
+      else if (!s.goal && (s.wait -= TICK) <= 0) {
+        s.goal = [Math.round(s.homeX + (this.rand() * 2 - 1) * 28), Math.round(s.homeY + (this.rand() * 2 - 1) * 20)];
+      }
+      if (!s.goal) continue;
+      const vx = s.goal[0] - s.x, vy = s.goal[1] - s.y;
+      if (Math.abs(vx) < 1 && Math.abs(vy) < 1) { s.goal = null; s.wait = 1 + this.rand() * 2; continue; }
+      while (s.sub >= 1) {
+        s.sub -= 1;
+        const dx = Math.abs(vx) >= 1 ? Math.sign(vx) : 0, dy = Math.abs(vy) >= 1 ? Math.sign(vy) : 0;
+        if (!this.move(s, dx, dy)) { s.goal = null; s.wait = 0.5; }
+        s.dir = dx < 0 ? 'left' : dx > 0 ? 'right' : s.dir;
+      }
+    }
   }
 
   updateNpc(a, frozen) {
@@ -185,7 +254,7 @@ export class Field {
       t.dir = this.faceFrom(p.x - t.x, p.y - t.y);
       t.goal = null; t.wait = 2;
     }
-    return lines;
+    return { lines, target: t };
   }
 
   // ───────── 描く ─────────
@@ -215,6 +284,8 @@ export class Field {
     const list = [];
     for (const o of this.objects) list.push({ y: (o.y + o.h) * T - 1, o });
     for (const a of this.actors) list.push({ y: a.y, a });
+    for (const f of this.followers) list.push({ y: f.y - 0.5, a: f });
+    for (const sy of this.symbols) if (!sy.gone) list.push({ y: sy.y, a: sy });
     list.sort((m, n) => m.y - n.y);
     for (const it of list) {
       if (it.o) {
@@ -240,6 +311,18 @@ export class Field {
 
   drawActor(ctx, a, ox, oy, ghost) {
     const x = Math.round(a.x + ox), y = Math.round(a.y + oy);
+    if (a.sym) {
+      const bob = Math.round(Math.sin(this.t * 4 + a.homeX) * 1.5);
+      const img = a.img;
+      ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(x - 6, y, 13, 2);
+      // 戦ったあとの 安全な あいだは 点めつ
+      if (this.safe > 0 && Math.floor(this.t * 10) % 2) return;
+      if (a.dir === 'left') {
+        ctx.save(); ctx.translate(x, 0); ctx.scale(-1, 1);
+        ctx.drawImage(img, -Math.floor(img.width / 2), y - img.height + 1 + bob); ctx.restore();
+      } else ctx.drawImage(img, x - Math.floor(img.width / 2), y - img.height + 1 + bob);
+      return;
+    }
     if (a.yokai) {
       const bob = Math.round(Math.sin(this.t * 3 + a.homeX) * 2);
       if (!ghost) { ctx.fillStyle = 'rgba(40,10,80,.18)'; ctx.fillRect(x - 4, y, 9, 2); }

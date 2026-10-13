@@ -26,6 +26,7 @@ export function initInput(root) {
 
   root.addEventListener('pointerdown', e => {
     if (pid !== null) return;
+    if (e.target.closest && e.target.closest('button')) return; // ボタンは べつあつかい
     pid = e.pointerId; ox = e.clientX; oy = e.clientY; t0 = performance.now();
     dragging = false;
     stick.style.left = ox + 'px'; stick.style.top = oy + 'px';

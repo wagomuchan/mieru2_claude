@@ -1,0 +1,8 @@
+<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="background:#2a1a4a;margin:0">
+<canvas id="c" width="1000" height="300"></canvas>
+<script type="module">
+import { enemyImage } from '../js/battle/enemygfx.js';
+const c=document.getElementById('c').getContext('2d'); c.imageSmoothingEnabled=false;
+let x=4;
+for (const k of ['hisohiso','horagai','karakasa','shiomaneki','umibozu']) { const i=enemyImage(k); c.drawImage(i,x,4,i.width*5,i.height*5); const d=enemyImage(k,true); c.drawImage(d,x,150,d.width*4,d.height*4); x+=i.width*5+12; }
+</script></body></html>

@@ -1,4 +1,23 @@
 // 登場人物の見た目
+// CHARS: マップを歩く ちびキャラ
+// FACES: 会話や戦闘の 顔グラフィック
+export const FACES = {
+  shimeru: {
+    hair: 'fluffy', acc: ['bigRibbon'], collar: 'round',
+    pal: { h: '#b8693a', H: '#e39c64', d: '#874424', c: '#6fae7a', C: '#4a8058', e: '#5a3a2a', E: '#a0704a' },
+  },
+  elesia: {
+    hair: 'straight', acc: ['starClip'], collar: 'v',
+    pal: { h: '#dfe4f2', H: '#ffffff', d: '#9aa2c0', c: '#4a6ad0', C: '#3048a0', a: '#ffffff', e: '#2a4a9a', E: '#6a9ae0' },
+  },
+  meina: {
+    hair: 'wavy', acc: ['earring', 'mole'], collar: 'open', eyes: 'sharp',
+    pal: { h: '#d8402e', H: '#f07a5a', d: '#9a2a20', c: '#3a3a58', C: '#26263e', a: '#f4ead8', e: '#8a4a10', E: '#d89a40' },
+  },
+};
+
+export const NAME_TO_FACE = { 'シメール': 'shimeru', 'エレシア': 'elesia', 'メイナ': 'meina' };
+
 export const CHARS = {
   shimeru: {
     hair: 'long', acc: ['bigRibbon', 'bag'],
@@ -7,6 +26,14 @@ export const CHARS = {
       c: '#6fae7a', C: '#4a8058', a: '#fff6e6',
       l: '#fff6e6', f: '#7a4a2a', r: '#e8466a', R: '#ff8fae',
     },
+  },
+  elesia: {
+    hair: 'long',
+    pal: { h: '#dfe4f2', H: '#ffffff', d: '#9aa2c0', c: '#4a6ad0', C: '#3048a0', a: '#ffffff', l: '#f4f4ff', f: '#2a3a7a' },
+  },
+  meina: {
+    hair: 'long',
+    pal: { h: '#d8402e', H: '#f07a5a', d: '#9a2a20', c: '#3a3a58', C: '#26263e', a: '#f4ead8', f: '#3a2a20', l: '#5a4a3a' },
   },
   baker: { hair: 'bun', acc: ['apron'], pal: { h: '#d8a040', H: '#f4cc70', d: '#a07020', c: '#d86a4a', C: '#a84a30' } },
   granny: { hair: 'bun', acc: ['apron'], pal: { h: '#c8c4d0', H: '#ecebf2', d: '#9894a4', c: '#7a6a9a', C: '#5a4a78', a: '#e8e0c8' } },
