@@ -88,6 +88,7 @@ export async function ask(lines, options) {
   $('msgnext').classList.remove('on');
   const box = $('choices');
   box.innerHTML = '';
+  box.classList.toggle('many', options.length > 2);
   box.classList.remove('hidden');
   const picked = await new Promise(resolve => {
     options.forEach((label, i) => {

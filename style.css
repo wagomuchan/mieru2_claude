@@ -85,7 +85,7 @@ html, body {
 }
 .hidden { display: none !important; }
 
-#msg { display: flex; gap: 10px; align-items: flex-start; }
+#msg { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; }
 #msgface { flex: none; image-rendering: pixelated; margin-top: 2px; }
 #msgbody { flex: 1; min-width: 0; }
 
@@ -96,6 +96,14 @@ html, body {
   display: flex;
   gap: 8px;
 }
+#choices.many {
+  position: static;
+  flex-basis: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+#choices.many button { font-size: 14px; padding: 10px 6px; }
 
 .btn, #choices button {
   font-family: inherit;

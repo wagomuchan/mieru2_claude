@@ -57,8 +57,9 @@ const el = (tag, cls, text) => {
 function kiroku(body) {
   body.appendChild(el('div', 'mh', 'いまの もくひょう'));
   body.appendChild(el('div', 'goal', story.goal()));
-  body.appendChild(el('div', 'mh', 'シメールの にっき'));
-  const entries = story.diary.filter(d => game.diary.includes(d.id));
+  body.appendChild(el('div', 'mh', 'こうかん日記'));
+  // 書かれた じゅんばんに ならべる
+  const entries = game.diary.map(id => story.diary.find(d => d.id === id)).filter(Boolean);
   if (!entries.length) body.appendChild(el('div', 'mnote', '（まだ なにも かいていない）'));
   for (const d of entries) {
     const b = el('button', 'btn diary-item', d.title);
