@@ -7,8 +7,7 @@ import { clamp, rng } from './util.js';
 
 // ガタつかないよう、1/60秒ごとに「きっちり整数ドット」ずつ動かす
 const TICK = 1 / 60;
-const WALK_STEP = 1;      // 1コマで進むドット（ふつう）
-const RUN_STEP = 2;       // 指を大きく すべらせたとき
+const WALK_STEP = 1;      // 1コマで進むドット
 const NPC_STEP = 0.5;     // 町の人（2コマに1ドット）
 const REACH = 16;         // しらべられる距離
 
@@ -115,14 +114,13 @@ export class Field {
     p.moving = false;
     if (!frozen && stick) {
       // 8方向に そろえる
-      const [sx, sy, run] = stick;
+      const [sx, sy] = stick;
       const oct = Math.round(Math.atan2(sy, sx) / (Math.PI / 4));
       const dx = Math.round(Math.cos(oct * Math.PI / 4)), dy = Math.round(Math.sin(oct * Math.PI / 4));
       // ななめのときは、いま向いている向きを なるべく保つ
       if (!(dx && dy && (DIRS[p.dir][0] === dx || DIRS[p.dir][1] === dy))) p.dir = this.faceFrom(dx, dy);
-      const steps = run ? RUN_STEP : WALK_STEP;
-      for (let i = 0; i < steps; i++) this.move(p, dx, dy);
-      p.walkDist += steps;
+      for (let i = 0; i < WALK_STEP; i++) this.move(p, dx, dy);
+      p.walkDist += WALK_STEP;
       p.moving = true;
     }
     for (const a of this.actors) if (!a.isPlayer) this.updateNpc(a, frozen);
