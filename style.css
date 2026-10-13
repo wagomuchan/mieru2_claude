@@ -133,10 +133,10 @@ html, body {
   background: #000;
   border: 3px solid #fff;
   border-radius: 8px;
-  padding: 4px 6px 5px;
+  padding: 4px 4px 5px;
   display: grid;
   grid-template-columns: auto 1fr;
-  column-gap: 5px;
+  column-gap: 4px;
   align-items: center;
   transition: background .2s;
 }
@@ -149,8 +149,9 @@ html, body {
 }
 .pbox canvas { grid-row: span 2; image-rendering: pixelated; }
 .pname { grid-column: 1 / -1; font-size: 13px; color: var(--accent); white-space: nowrap; text-align: center; margin-bottom: 2px; }
-.prow { font-size: 16px; display: flex; justify-content: space-between; white-space: nowrap; }
-.prow b { font-weight: normal; color: var(--dim); font-size: 11px; }
+.prow { font-size: 15px; display: flex; justify-content: space-between; align-items: baseline; white-space: nowrap; }
+.prow b { font-weight: normal; color: var(--dim); font-size: 10px; }
+.prow .max { font-size: 11px; color: var(--dim); }
 .roll { font-variant-numeric: tabular-nums; letter-spacing: .04em; }
 .prow.low .roll { color: #ff8a8a; }
 .pcard {

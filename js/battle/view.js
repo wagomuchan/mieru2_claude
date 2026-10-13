@@ -159,6 +159,10 @@ export class BattleView {
       const hpS = String(Math.round(b.hp)), mpS = String(Math.round(b.mp));
       if (b.hpEl.textContent !== hpS) b.hpEl.textContent = hpS;
       if (b.mpEl.textContent !== mpS) b.mpEl.textContent = mpS;
+      // 分母（覚醒で ふえる）
+      const hpM = '/' + m.max.hp, mpM = '/' + m.max.mp;
+      if (b.hpMaxEl.textContent !== hpM) b.hpMaxEl.textContent = hpM;
+      if (b.mpMaxEl.textContent !== mpM) b.mpMaxEl.textContent = mpM;
       b.hpRow.classList.toggle('low', b.hpTo > 0 && b.hpTo < m.max.hp * 0.3);
       if (b.faceT > 0 && (b.faceT -= dt) <= 0) this.setFace(b, this.restFace(b), 0);
     }
@@ -171,7 +175,7 @@ export class BattleView {
   }
 
   setFace(b, ex, sec) {
-    if (b.face !== ex) { paintPortrait(b.canvas, getFaces(PARTY_DEFS[b.member.id].face)[ex], 48); b.face = ex; }
+    if (b.face !== ex) { paintPortrait(b.canvas, getFaces(PARTY_DEFS[b.member.id].face)[ex], 40); b.face = ex; }
     b.faceT = sec;
   }
 
@@ -190,11 +194,12 @@ export class BattleView {
       const el = document.createElement('div');
       el.className = 'pbox' + (m.hp <= 0 ? ' fainted' : '');
       el.innerHTML = `<div class="pname">${m.name}</div><canvas></canvas>
-        <div class="prow hp"><b>HP</b><span class="roll"></span></div>
-        <div class="prow"><b>MP</b><span class="roll"></span></div>`;
+        <div class="prow hp"><b>HP</b><span><span class="roll"></span><span class="max"></span></span></div>
+        <div class="prow"><b>MP</b><span><span class="roll"></span><span class="max"></span></span></div>`;
       wrap.appendChild(el);
       const rolls = el.querySelectorAll('.roll');
-      const b = { el, member: m, canvas: el.querySelector('canvas'), hpEl: rolls[0], mpEl: rolls[1], hpRow: el.querySelector('.prow.hp'),
+      const maxes = el.querySelectorAll('.max');
+      const b = { el, member: m, canvas: el.querySelector('canvas'), hpEl: rolls[0], mpEl: rolls[1], hpMaxEl: maxes[0], mpMaxEl: maxes[1], hpRow: el.querySelector('.prow.hp'),
         hp: m.hp, hpTo: m.hp, mp: m.mp, mpTo: m.mp, face: null, faceT: 0 };
       this.setFace(b, this.restFace(b), 0);
       return b;
