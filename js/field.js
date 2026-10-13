@@ -14,6 +14,7 @@ const NPC_STEP = 0.5;     // 町の人（2コマに1ドット）
 const REACH = 16;         // しらべられる距離
 
 const DIRS = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] };
+const FOOT = [[-5, -4], [5, -4], [-5, 1], [5, 1], [0, -4], [0, 1]];
 
 // キャラの絵は 1回だけ作って つかいまわす
 const lookCache = {};
@@ -124,8 +125,8 @@ export class Field {
     return this.rows[y][x];
   }
 
-  // そのドットに 立てるか
-  blocked(px, py, self) {
+  // そのドットに 立てるか（ignore にいる人は 気にしない）
+  blocked(px, py, self, ignore) {
     const tx = Math.floor(px / T), ty = Math.floor(py / T);
     const c = this.tile(tx, ty);
     if (c === null || SOLID_TILES.has(c)) return true;
@@ -134,16 +135,24 @@ export class Field {
       if (px >= o.x * T && px < (o.x + o.w) * T && py >= o.y * T && py < (o.y + o.h) * T) return true;
     }
     for (const a of this.actors) {
-      if (a === self) continue;
+      if (a === self || a.hidden || (ignore && ignore.includes(a))) continue;
       if (Math.abs(a.x - px) < 6 && Math.abs(a.y - py) < 4) return true;
     }
     return false;
   }
 
+  // いま 重なっている人（セーブを 読みこんだときなど）
+  overlapping(a) {
+    return this.actors.filter(b => b !== a && !b.hidden &&
+      FOOT.some(([ox, oy]) => Math.abs(b.x - (a.x + ox)) < 6 && Math.abs(b.y - (a.y + oy)) < 4));
+  }
+
   // 足もとの 四角（横10×縦5）が 空いているか
+  // すでに 重なってしまった人とは、はなれる方向に 動けるようにする
   free(a, x, y) {
-    for (const [ox, oy] of [[-5, -4], [5, -4], [-5, 1], [5, 1], [0, -4], [0, 1]]) {
-      if (this.blocked(x + ox, y + oy, a)) return false;
+    const stuck = this.overlapping(a);
+    for (const [ox, oy] of FOOT) {
+      if (this.blocked(x + ox, y + oy, a, stuck)) return false;
     }
     return true;
   }

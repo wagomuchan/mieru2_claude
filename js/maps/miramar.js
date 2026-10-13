@@ -376,7 +376,7 @@ function troupe(P) {
     4: [['ロザ|灯台に 行くのね。 ……気を つけて。',
       'ロザ|この一座の 子は、 みんな わたしの 家族よ。 もちろん あなたもね、 シメールちゃん。']],
   }) });
-  list.push({ id: 'pipi', look: 'pipi', x: 17, y: 11, dir: 'down', name: 'ピピ', wander: 2, talk: byPhase({
+  list.push({ id: 'pipi', look: 'pipi', x: 18, y: 11, dir: 'down', name: 'ピピ', wander: 1, talk: byPhase({
     1: [['ピピ|あっ！ おきゃくさんだ！ ピピだよ！ 一座で いちばん げんきな 子！',
       'ピピ|……ねえ。 おねえちゃんの うしろに、 ちっちゃいの ついてきてるよ。',
       `${ME}@surprise|（……！）`,
