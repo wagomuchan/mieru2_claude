@@ -11,6 +11,7 @@ const avgAwaken = () => game.party.reduce((s, m) => s + m.awaken, 0) / game.part
 const addDiary = id => { if (!game.diary.includes(id)) game.diary.push(id); };
 
 export const story = {
+  startMap: 'miramar',
   // ───────── はじめから ─────────
   async onNewGame(a) {
     await a.wait(300);
@@ -33,7 +34,7 @@ export const story = {
   },
 
   async onResume(a) {
-    if (game.phase === PH.END) await a.say(['第一章は おわりました。', '第二章を おたのしみに！']);
+    if (game.phase === PH.END) await offerChapter2(a);
   },
 
   async onEnter(mapId, a) {
@@ -554,10 +555,16 @@ async function wagonEnding(a) {
   game.rest = { map: 'miramar', x: 4 * 16 + 8, y: 8 * 16 + 12, dir: 'down' };
   await a.say(['第一章 「うそつきと 歌姫」', '―― おわり ――']);
   await askSave(a);
-  await a.say(['第二章に つづく……', 'あそんでくれて、 ありがとう！']);
   a.reload();
   a.tint(null);
   await a.fade(false);
+  await offerChapter2(a);
+}
+
+async function offerChapter2(a) {
+  const p = await a.ask(['第二章 「なくしたボタンと 桜の魔術師」を はじめる？', '（3人の 強さや なかよし度は、 そのまま ひきつぎます）'], ['はじめる', 'あとで']);
+  if (p === 0) await a.startChapter2();
+  else await a.say(['また いつでも、 タイトルの 「つづきから」で はじめられます。']);
 }
 
 // ───────── テントで 休む ─────────
@@ -779,7 +786,7 @@ function goal() {
       'つかれたら、 北の ひろばの 青い テントで 休める。\n町はずれ（砂浜・みさき）には、 ようかいが 出る。';
   }
   if (P === PH.TOWER) return '灯台へ 行こう。\n\n灯台は 町の 右下、 みさきの 先。\n灯台の てっぺんに、 町の うそを 食べている ようかいが いるらしい。\n3かいには ぷぅちゃんが いて、 休ませてくれる。\n\n北の ひろばの 青い テントでも 休める。';
-  return '第一章 おわり。\n第二章を おたのしみに！';
+  return '第一章 おわり。\nタイトルの 「つづきから」で 第二章を はじめられる。';
 }
 
 // ───────── 交換日記（3人が 書く） ─────────

@@ -135,6 +135,9 @@ html, body {
 /* ───────── 戦闘 ───────── */
 #battleui { margin-top: 14px; }
 #pboxes { display: flex; gap: 6px; }
+#pboxes.four { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 8px; }
+#pboxes.four .pbox { grid-template-columns: auto auto 1fr; }
+#pboxes.four .pname { grid-column: auto; grid-row: span 2; writing-mode: vertical-rl; font-size: 12px; margin: 0; }
 .pbox {
   position: relative;
   flex: 1;

@@ -1,12 +1,14 @@
 // ゲーム全体の 状態（仲間・物語の進み具合・仲良し度・セーブ）
-import { newMember } from './battle/core.js';
+import { newMember, growMember } from './battle/core.js';
+import { rng } from './util.js';
 
 export const MAX_CHEERS = 3;
 const SAVE_KEY = 'mieru2.save';
 const AUTO_KEY = 'mieru2.auto';
 
 export const game = {
-  phase: 0,           // 物語の 進み具合
+  chapter: 1,         // いまの 章
+  phase: 0,           // 物語の 進み具合（章ごと）
   flags: {},
   members: {},        // 仲間全員（パーティーに いない子も）
   partyIds: ['shimeru'],
@@ -19,16 +21,36 @@ export const game = {
   rest: null,         // 最後に 休んだ場所 { map, x, y, dir }
   diary: [],          // 読める日記
   bedTalks: {},       // 見た ベッドトーク
+  looks: {},          // 見た目の いれかえ { shimeru: 'shimeru_nr' } など
   playSec: 0,
 };
 
 export function newGame() {
   Object.assign(game, {
-    phase: 0, flags: {}, partyIds: ['shimeru'], cheers: MAX_CHEERS, naka: {},
-    map: 'miramar', pos: null, rest: null, diary: [], bedTalks: {}, playSec: 0,
+    chapter: 1, phase: 0, flags: {}, partyIds: ['shimeru'], cheers: MAX_CHEERS, naka: {},
+    map: 'miramar', pos: null, rest: null, diary: [], bedTalks: {}, looks: {}, playSec: 0,
   });
   game.members = {};
-  for (const id of ['shimeru', 'elesia', 'meina']) game.members[id] = newMember(id);
+  for (const id of ['shimeru', 'elesia', 'meina', 'sakura']) game.members[id] = newMember(id);
+}
+
+// 第二章へ（一章の 強さや 仲良し度は そのまま）
+export function enterChapter2() {
+  Object.assign(game, { chapter: 2, phase: 0, flags: {}, partyIds: ['shimeru', 'elesia', 'meina'], rest: null, pos: null, looks: {} });
+  // 二章で 仲間になる サクラは、3人と 同じくらいの 強さで 来る
+  const avg = Math.round(['shimeru', 'elesia', 'meina'].reduce((s, id) => s + game.members[id].awaken, 0) / 3);
+  game.members.sakura = growMember(newMember('sakura'), Math.max(60, avg + 4), rng(777));
+  restAll();
+}
+
+// タイトルの「第二章から」：一章を クリアしたくらいの 強さで はじめる
+export function newGameChapter2() {
+  newGame();
+  const r = rng(4242);
+  for (const id of ['shimeru', 'elesia', 'meina']) growMember(game.members[id], 82, r);
+  for (const [a, b] of [['shimeru', 'elesia'], ['shimeru', 'meina'], ['elesia', 'meina']]) addNaka(a, b, 95);
+  game.diary = ['d1', 'd2', 'e1', 'd3', 'm1', 'd4', 'e2'];
+  enterChapter2();
 }
 newGame();
 
@@ -58,7 +80,7 @@ export function hearts(a, b) {
 // ───────── セーブ ─────────
 function snapshot() {
   return {
-    v: 1, time: Date.now(),
+    v: 1, time: Date.now(), chapter: game.chapter, looks: game.looks,
     phase: game.phase, flags: game.flags, members: game.members, partyIds: game.partyIds,
     cheers: game.cheers, naka: game.naka, map: game.map, pos: game.pos, rest: game.rest,
     diary: game.diary, bedTalks: game.bedTalks, playSec: game.playSec, speed: game.speed,
@@ -68,6 +90,7 @@ function snapshot() {
 function apply(d) {
   newGame();
   Object.assign(game, {
+    chapter: d.chapter || 1, looks: d.looks || {},
     phase: d.phase, flags: d.flags || {}, partyIds: d.partyIds, cheers: d.cheers, naka: d.naka || {},
     map: d.map, pos: d.pos, rest: d.rest, diary: d.diary || [], bedTalks: d.bedTalks || {}, playSec: d.playSec || 0, speed: d.speed || 1,
   });

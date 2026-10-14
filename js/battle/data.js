@@ -25,6 +25,20 @@ export const SKILLS = {
   nagenawa: { name: 'なげなわ', kind: 'stun', target: 'enemy', mp: 3, verb: 'なげなわを ひゅんと なげた！' },
   hitohada: { name: 'ひとはだ', kind: 'heal', target: 'ally', mp: 4, power: 18, verb: '「しっかりしな！」 と せなかを たたいた！' },
   ikki: { name: 'いっきうち', kind: 'attack', target: 'enemy', mp: 5, power: 1.8, verb: 'おもいきり ふりかぶった！' },
+  // ───── 第二章で おぼえる技 ─────
+  tokkuyaku: { name: 'とっておきの くすり', kind: 'heal', target: 'ally', mp: 9, power: 48, verb: 'ほんものの 薬草を せんじた くすりだ！' },
+  nemurigusa: { name: 'ねむり草', kind: 'sleep', target: 'enemies', mp: 7, verb: 'ねむり草の けむりを ふわっと ひろげた……' },
+  utahime: { name: '歌姫の アリア', kind: 'magic', target: 'enemy', mp: 9, power: 46, verb: 'ぶたいの まんなかで 歌う ときの 声！' },
+  duet: { name: 'ひびきあう うた', kind: 'magic', target: 'enemies', mp: 13, power: 30, verb: 'こだまが こだまを よんで、 歌が かさなっていく！' },
+  daifunsen: { name: 'だいふんせん', kind: 'attack', target: 'enemies', mp: 8, power: 1.05, verb: 'むちを ぐるんと ふりまわした！' },
+  zachou: { name: '座長の いちげき', kind: 'attack', target: 'enemy', mp: 9, power: 2.6, verb: '「一座に 手を だすんじゃないよ！」' },
+  // サクラ
+  shibire: { name: 'しびれの じゅつ', kind: 'stun', target: 'enemy', mp: 4, verb: '魔法陣が ぱちぱちと 光った！' },
+  kekkai: { name: 'さくらの 結界', kind: 'buff', target: 'allies', mp: 6, stat: 'def', verb: 'さくら色の 結界が みんなを つつんだ！' },
+  nibui: { name: 'のろのろの じゅつ', kind: 'debuff', target: 'enemy', mp: 3, stat: 'spd', verb: '「えーっと、 じかんの ながれを ちょっとだけ……」' },
+  sakuramochi: { name: 'さくらもち', kind: 'heal', target: 'ally', mp: 5, power: 26, verb: '手作りの さくらもちを わたした！ もちもち！' },
+  fubuki: { name: 'さくらふぶき', kind: 'magic', target: 'enemies', mp: 8, power: 18, verb: '魔法の 花びらが うずを まいた！' },
+  hanaikada: { name: 'はないかだ', kind: 'buff', target: 'allies', mp: 8, stat: 'spd', verb: '花びらの いかだに のって、 みんなの 足が かるくなった！' },
 };
 
 // ───────── 仲間 ─────────
@@ -36,22 +50,29 @@ export const PARTY_DEFS = {
     name: 'シメール', job: 'みならい', personality: 'ちゃっかり', face: 'shimeru',
     base: { hp: 30, mp: 16, atk: 6, def: 6, mag: 9, spd: 9 },
     weight: { hp: 26, mp: 22, atk: 6, def: 16, mag: 20, spd: 10 },
-    learn: [[0, 'kusuri'], [10, 'hattari'], [25, 'minnakusuri'], [42, 'kuchiguruma'], [62, 'kitsuke']],
+    learn: [[0, 'kusuri'], [10, 'hattari'], [25, 'minnakusuri'], [42, 'kuchiguruma'], [62, 'kitsuke'], [98, 'tokkuyaku'], [122, 'nemurigusa']],
     weapon: 'ほうき',
   },
   elesia: {
     name: 'エレシア', job: '歌姫', personality: 'かんぺき', face: 'elesia',
     base: { hp: 26, mp: 18, atk: 5, def: 5, mag: 11, spd: 8 },
     weight: { hp: 22, mp: 22, atk: 4, def: 10, mag: 30, spd: 12 },
-    learn: [[0, 'uta'], [8, 'hibiku'], [22, 'takanaru'], [45, 'komoriuta'], [68, 'arashi']],
+    learn: [[0, 'uta'], [8, 'hibiku'], [22, 'takanaru'], [45, 'komoriuta'], [68, 'arashi'], [96, 'utahime'], [124, 'duet']],
     weapon: 'マイク',
   },
   meina: {
     name: 'メイナ', job: '座長', personality: 'ごうかい', face: 'meina',
     base: { hp: 38, mp: 8, atk: 10, def: 8, mag: 6, spd: 7 },
     weight: { hp: 32, mp: 8, atk: 26, def: 20, mag: 6, spd: 8 },
-    learn: [[0, 'ikki'], [12, 'gahaha'], [30, 'hitohada'], [50, 'nagenawa']],
+    learn: [[0, 'ikki'], [12, 'gahaha'], [30, 'hitohada'], [50, 'nagenawa'], [94, 'daifunsen'], [120, 'zachou']],
     weapon: 'むち',
+  },
+  sakura: {
+    name: 'サクラ', job: '魔術師', personality: 'のんびり', face: 'sakura',
+    base: { hp: 28, mp: 20, atk: 5, def: 7, mag: 11, spd: 8 },
+    weight: { hp: 24, mp: 24, atk: 4, def: 16, mag: 22, spd: 10 },
+    learn: [[0, 'shibire'], [0, 'nibui'], [20, 'kekkai'], [45, 'sakuramochi'], [70, 'fubuki'], [110, 'hanaikada']],
+    weapon: 'つえ',
   },
 };
 
@@ -92,6 +113,48 @@ export const ENEMY_DEFS = {
       [2, { kind: 'attack', target: 'all', power: 0.7, verb: 'おおきく はばたいた！ つよい 風！' }],
       [2, { kind: 'magic', target: 'all', power: 14, verb: '「ホントウノ コトヲ イエ！」 まことの さけび！' }],
       [1, { kind: 'drain', stat: 'mp', amount: 6, verb: 'うそを ついばんだ！' }],
+    ],
+  },
+  // ── 第二章 ──
+  kakashi: {
+    name: 'カカシボウ', lv: 84, look: 'kakashi', mul: { hp: 1.0, atk: 1.0, spd: 0.9 },
+    moves: [[3, { kind: 'attack', verb: 'うでの 棒で ぶんなぐった！' }], [1, { kind: 'debuff', stat: 'spd', verb: 'ギロリと にらんだ！ 足が すくむ！' }]],
+  },
+  morokoshi: {
+    name: 'モロコシボウズ', lv: 86, look: 'morokoshi', mul: { hp: 0.9, atk: 1.05, spd: 1.1 },
+    moves: [[3, { kind: 'attack', verb: 'からだを ぶつけてきた！' }], [1, { kind: 'attack', hits: 3, power: 0.45, verb: 'つぶを ポップコーンみたいに はじけさせた！' }]],
+  },
+  korokoro: {
+    name: 'コロコロクサ', lv: 82, look: 'korokoro', mul: { hp: 0.8, atk: 0.9, spd: 1.4 },
+    moves: [[3, { kind: 'attack', verb: 'ころころ ころがってきた！' }], [1, { kind: 'confuse', verb: 'ぐるぐる まわって 目を まわさせた！' }]],
+  },
+  botandama: {
+    name: 'ボタンダマ', lv: 98, look: 'botandama', mul: { hp: 1.1, def: 1.25, spd: 0.9 },
+    moves: [[3, { kind: 'attack', verb: 'ころがって ぶつかってきた！' }], [1, { kind: 'buff', stat: 'def', verb: 'ぴっちり ボタンを とめた！' }]],
+  },
+  chokin: {
+    name: 'チョキン', lv: 104, look: 'chokin', mul: { hp: 0.9, atk: 1.25, spd: 1.2 },
+    moves: [[3, { kind: 'attack', verb: 'チョキン！ と きりつけた！' }], [1, { kind: 'attack', hits: 2, power: 0.7, verb: 'チョキチョキ チョキン！' }]],
+  },
+  itomaki: {
+    name: 'イトマキ', lv: 100, look: 'itomaki', mul: { hp: 1.2, atk: 0.9, mag: 1.2, spd: 0.9 },
+    moves: [[2, { kind: 'attack', verb: '糸で ぐるぐる まきつけた！' }], [1, { kind: 'stun', verb: '糸で しばりつけようと した！' }], [1, { kind: 'magic', target: 'all', power: 10, verb: '糸を はりめぐらせた！' }]],
+  },
+  kurokakashi: {
+    name: 'クロカカシボウ', lv: 122, look: 'kakashi', dark: true, mul: { hp: 1.3, atk: 1.1, spd: 0.9 },
+    moves: [[3, { kind: 'attack', verb: 'うでの 棒で ぶんなぐった！' }], [1, { kind: 'magic', target: 'all', power: 14, verb: 'くろい カラスを よびよせた！' }]],
+  },
+  kurochokin: {
+    name: 'クロチョキン', lv: 134, look: 'chokin', dark: true, mul: { hp: 1.2, atk: 1.25, spd: 1.2 },
+    moves: [[3, { kind: 'attack', verb: 'チョキン！ と きりつけた！' }], [1, { kind: 'attack', hits: 3, power: 0.6, verb: 'チョキチョキ チョキチョキ チョキン！' }]],
+  },
+  botankakushi: {
+    name: 'ボタン隠し', lv: 140, look: 'botankakushi', boss: true, mul: { hp: 4.4, atk: 1.0, def: 1.05, mag: 1.1, spd: 1.15 },
+    moves: [
+      [3, { kind: 'attack', verb: 'ふくろで ぼかっと なぐった！' }],
+      [2, { kind: 'magic', target: 'all', power: 16, verb: 'ボタンを ばらまいた！ いたい いたい！' }],
+      [1, { kind: 'confuse', verb: 'くすぐった！ わらいが とまらない！' }],
+      [1, { kind: 'debuff', stat: 'def', verb: '服の ボタンを かくした！ すうすうする！' }],
     ],
   },
   // 黒いシンボル（強い）

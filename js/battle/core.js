@@ -19,6 +19,13 @@ function learnSkills(m) {
   return got;
 }
 
+// 何回か 覚醒した ところまで そだてる（「第二章から」や、途中から 仲間になる子）
+export function growMember(m, n, rand) {
+  for (let i = 0; i < n; i++) doAwaken(m, rand);
+  m.hp = m.max.hp; m.mp = m.max.mp;
+  return m;
+}
+
 // 覚醒：ステータスが1つ上がる
 export function doAwaken(m, rand) {
   const w = PARTY_DEFS[m.id].weight;
@@ -244,9 +251,11 @@ export class Battle {
       const hurt = allies.filter(a => ratio(a) < 0.55);
       if (hurt.length >= 2 && this.canUse(u, 'minnakusuri')) return skill('minnakusuri', allies);
       const w = weakest(allies);
+      if (ratio(w) < 0.3 && this.canUse(u, 'tokkuyaku')) return skill('tokkuyaku', [w]);
       if (ratio(w) < 0.5 && this.canUse(u, 'kusuri')) return skill('kusuri', [w]);
       if (this.rand() < 0.22) {
         const strong = highHp(enemies);
+        if (enemies.length >= 2 && this.canUse(u, 'nemurigusa') && this.rand() < 0.4 && !enemies.some(e => e.sleep)) return skill('nemurigusa', enemies);
         if (this.canUse(u, 'kuchiguruma') && this.rand() < 0.5 && !strong.confused) return skill('kuchiguruma', [strong]);
         if (this.canUse(u, 'hattari') && !strong.buffs.atk) return skill('hattari', [strong]);
       }
@@ -257,14 +266,30 @@ export class Battle {
     if (u.id === 'elesia') {
       // かんぺき：歌で 大物から たおす。MPを おしまない
       if (enemies.length >= 2) {
+        if (this.canUse(u, 'duet') && this.rand() < 0.55) return skill('duet', enemies);
         if (this.canUse(u, 'arashi') && this.rand() < 0.6) return skill('arashi', enemies);
-        if (this.canUse(u, 'komoriuta') && this.rand() < 0.2 && !enemies.some(e => e.sleep)) return skill('komoriuta', enemies);
+        if (this.canUse(u, 'komoriuta') && this.rand() < 0.15 && !enemies.some(e => e.sleep)) return skill('komoriuta', enemies);
         if (this.canUse(u, 'hibiku') && this.rand() < 0.65) return skill('hibiku', enemies);
       }
       const big = highHp(enemies);
+      if (this.canUse(u, 'utahime') && this.rand() < 0.55) return skill('utahime', [big]);
       if (this.canUse(u, 'takanaru') && this.rand() < 0.6) return skill('takanaru', [big]);
       if (this.canUse(u, 'uta')) return skill('uta', [big]);
       return { kind: 'attack', verb: 'マイクで ぽかっと なぐった！', targets: [big] };
+    }
+
+    if (u.id === 'sakura') {
+      // のんびり：みんなを まもって、敵を にぶくする。たまに ぼーっと している
+      if (this.rand() < 0.08) return { kind: 'idle', verb: 'さくらもちの ことを 考えている……', targets: [] };
+      const w = weakest(allies);
+      if (ratio(w) < 0.4 && this.canUse(u, 'sakuramochi') && this.rand() < 0.6) return skill('sakuramochi', [w]);
+      if (this.canUse(u, 'kekkai') && !allies.some(a => a.buffs.def && a.buffs.def.stage > 0) && this.rand() < 0.45) return skill('kekkai', allies);
+      if (this.canUse(u, 'hanaikada') && !allies.some(a => a.buffs.spd && a.buffs.spd.stage > 0) && this.rand() < 0.25) return skill('hanaikada', allies);
+      const strong = highHp(enemies);
+      if (this.canUse(u, 'shibire') && !strong.stun && this.rand() < 0.3) return skill('shibire', [strong]);
+      if (this.canUse(u, 'nibui') && !strong.buffs.spd && this.rand() < 0.25) return skill('nibui', [strong]);
+      if (enemies.length >= 2 && this.canUse(u, 'fubuki') && this.rand() < 0.5) return skill('fubuki', enemies);
+      return { kind: 'attack', verb: 'つえで こつんと たたいた！', targets: [this.pick(enemies)] };
     }
 
     // メイナ（ごうかい）：なんでも できる
@@ -275,6 +300,8 @@ export class Battle {
       const t = highHp(enemies);
       if (!t.stun) return skill('nagenawa', [t]);
     }
+    if (enemies.length >= 2 && this.canUse(u, 'daifunsen') && this.rand() < 0.35) return skill('daifunsen', enemies);
+    if (this.canUse(u, 'zachou') && this.rand() < 0.25) return skill('zachou', [highHp(enemies)]);
     if (this.canUse(u, 'ikki') && this.rand() < 0.25) return skill('ikki', [this.pick(enemies)]);
     return { kind: 'attack', verb: 'むちを ふるった！', targets: [this.pick(enemies)], combo: true };
   }

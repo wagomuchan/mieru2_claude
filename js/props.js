@@ -104,6 +104,13 @@ function drawHouse(ctx, o, sx, sy, t) {
 
   // かんばん
   if (o.sign) drawSignIcon(ctx, sx + (o.door + 1) * T + 2, wallTop + 2, o.sign);
+  // ポーチ（木の 床と 手すり）
+  if (o.porch) {
+    rect(ctx, sx - 1, bottom - 2, fw + 2, 4, INK);
+    rect(ctx, sx, bottom - 1, fw, 2, '#9a7a56');
+    for (let x = sx + 2; x < sx + fw - 1; x += 5) if (Math.abs(x - (sx + o.door * T + 8)) > 7) rect(ctx, x, bottom - 9, 1, 8, '#f4ead8');
+    rect(ctx, sx + 1, bottom - 9, fw - 2, 1, '#f4ead8');
+  }
 }
 
 function drawSignIcon(ctx, x, y, kind) {
@@ -174,8 +181,11 @@ const STALL_GOODS = {
   fish: ['#8ab0d8', '#6a90c0', '#c0d8f0', '#8ab0d8'],
   cloth: ['#e86a9a', '#6ab0e8', '#f4d050', '#9a7ad8'],
   potion: ['#e8466a', '#5ad0a0', '#b080ff', '#ffd060'],
+  pie: ['#d89040', '#b8602a', '#e8b060', '#c8402a'],
+  candy: ['#ff8fae', '#8ad8f0', '#fff4a0', '#c8a0f0'],
+  corn: ['#f4d040', '#e8b020', '#7ac04a', '#f4d040'],
 };
-const AWNING = { fruit: ['#e85a4a', '#fff4e4'], fish: ['#4a7ac8', '#fff4e4'], cloth: ['#9a5ad0', '#fff4e4'], potion: ['#4aa070', '#fff4e4'] };
+const AWNING = { fruit: ['#e85a4a', '#fff4e4'], fish: ['#4a7ac8', '#fff4e4'], cloth: ['#9a5ad0', '#fff4e4'], potion: ['#4aa070', '#fff4e4'], pie: ['#c8602a', '#fff4e4'], candy: ['#e86aa0', '#fff4e4'], corn: ['#d8a020', '#fff4e4'] };
 
 function drawStall(ctx, o, sx, sy, t) {
   const fw = o.w * T;
@@ -454,10 +464,14 @@ const DRAW = {
   wagon: drawWagon, stage: drawStage, stairs: drawStairs, lens: drawLens, nest: drawNest, window: drawWindow, bed: drawBed,
 };
 
+// ほかの ファイルから 建物を ふやす
+export function registerProps(more) { Object.assign(DRAW, more); }
+export { box, rect, INK };
+
 export function drawProp(ctx, o, sx, sy, t) {
   const fn = DRAW[o.type];
   if (fn) fn(ctx, o, sx, sy, t);
 }
 
 // どの種類が ふみこめないか（boat は海の上なので不要、tent は ロープだけ）
-export const PASSABLE_PROPS = new Set(['boat', 'stairs', 'window']);
+export const PASSABLE_PROPS = new Set(['boat', 'stairs', 'window', 'pumpkin', 'puddle', 'buttons']);

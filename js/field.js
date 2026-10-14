@@ -1,11 +1,13 @@
 // マップを歩く部分
 import { T, tileImage, drawSea, drawLandEdge, drawWall, SOLID_TILES } from './tiles.js';
 import { drawProp, PASSABLE_PROPS } from './props.js';
+import './props2.js';
 import { buildCharacter, buildYokai, SW, SH } from './sprites.js';
 import { CHARS } from './chars.js';
 import { clamp, rng } from './util.js';
 import { enemyImage } from './battle/enemygfx.js';
-import { AREA_LOOK } from './battle/areas.js';
+import { AREA_LOOK, DARK_AREAS } from './battle/areas.js';
+import { game } from './game.js';
 
 // ガタつかないよう、1/60秒ごとに「きっちり整数ドット」ずつ動かす
 const TICK = 1 / 60;
@@ -19,6 +21,8 @@ const FOOT = [[-5, -4], [5, -4], [-5, 1], [5, 1], [0, -4], [0, 1]];
 // キャラの絵は 1回だけ作って つかいまわす
 const lookCache = {};
 export const look = id => (lookCache[id] ||= buildCharacter(CHARS[id]));
+// 仲間は、物語で 見た目が かわることがある（リボンの とりかえっこ など）
+const partyLook = id => look(game.looks[id] || id);
 
 export class Field {
   // data: マップのデータ　opts: { followers: ['elesia', ...], start: {x, y, dir}（ドット単位） }
@@ -33,7 +37,7 @@ export class Field {
     this.tint = data.tint || null;
     this.emotes = [];
 
-    this.player = this.makeActor({ id: 'shimeru', x: data.start.x, y: data.start.y, dir: data.start.dir }, look('shimeru'));
+    this.player = this.makeActor({ id: 'shimeru', x: data.start.x, y: data.start.y, dir: data.start.dir }, partyLook('shimeru'));
     this.player.isPlayer = true;
     if (opts.start) Object.assign(this.player, opts.start);
     this.npcs = (data.npcs || []).map(n => this.makeActor(n, n.look ? look(n.look) : null));
@@ -48,7 +52,7 @@ export class Field {
     // マップ上の 妖怪シンボル（ぶつかると 戦闘）
     this.symbols = (data.symbols || []).map(d => {
       const a = this.makeActor(d, null);
-      return Object.assign(a, { sym: true, img: enemyImage(AREA_LOOK[d.area], d.area === 'black'), sub: 0 });
+      return Object.assign(a, { sym: true, img: enemyImage(AREA_LOOK[d.area], DARK_AREAS.has(d.area)), sub: 0 });
     });
     // 大きな 妖怪（ボスなど。マップに 置くだけ）
     this.bigs = (data.bigs || []).map(b => ({ ...b, img: enemyImage(b.look), x: b.x * T + 8, y: b.y * T + 12 }));
@@ -61,9 +65,15 @@ export class Field {
     this.target = null;
   }
 
+  // 見た目が かわったら 描きなおす
+  refreshLooks() {
+    this.player.frames = partyLook('shimeru');
+    for (const f of this.followers) f.frames = partyLook(f.id);
+  }
+
   setFollowers(ids) {
     const p = this.player;
-    this.followers = ids.map((id, i) => ({ id, frames: look(id), gap: 14 * (i + 1), x: p.x, y: p.y, dir: p.dir, walkDist: 0, moving: false }));
+    this.followers = ids.map((id, i) => ({ id, frames: partyLook(id), gap: 14 * (i + 1), x: p.x, y: p.y, dir: p.dir, walkDist: 0, moving: false }));
     this.trail = [];
   }
 
@@ -95,6 +105,12 @@ export class Field {
     const a = this.actor(id);
     if (a) this.emotes.push({ a, kind, until: this.t + sec });
   }
+
+  // 大きな 妖怪を その場に 出す（イベント用）
+  addBig(id, look, tx, ty, dark) {
+    this.bigs.push({ id, look, img: enemyImage(look, dark), x: tx * T + 8, y: ty * T + 12 });
+  }
+  removeBig(id) { this.bigs = this.bigs.filter(b => b.id !== id); }
 
   // ワープ（休んだあと・全滅したあと）
   teleport(x, y, dir) {
@@ -268,7 +284,7 @@ export class Field {
       const d = Math.hypot(p.x - s.x, p.y - s.y);
       if (this.safe <= 0 && d < 15) { this.encounter = s; return; }
       const chase = this.safe <= 0 && d < 64;
-      s.sub += chase ? (s.area === 'black' ? 0.75 : 0.6) : 0.35;
+      s.sub += chase ? (DARK_AREAS.has(s.area) ? 0.75 : 0.6) : 0.35;
       if (chase) s.goal = [p.x, p.y];
       else if (!s.goal && (s.wait -= TICK) <= 0) {
         s.goal = [Math.round(s.homeX + (this.rand() * 2 - 1) * 28), Math.round(s.homeY + (this.rand() * 2 - 1) * 20)];
@@ -465,6 +481,7 @@ const TINTS = {
   evening: 'rgba(255, 110, 60, .22)',
   night: 'rgba(14, 14, 64, .62)',
   dim: 'rgba(10, 6, 30, .35)',
+  sakura: 'rgba(255, 150, 190, .28)',
 };
 
 // 7×7 の 小さなマーク

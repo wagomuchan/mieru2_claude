@@ -3,12 +3,16 @@
 // 「@表情」をつけると、顔グラフィックの表情が かわる。
 import { buildPortraits, paintPortrait } from './portraits.js';
 import { FACES, NAME_TO_FACE } from './chars.js';
+import { game } from './game.js';
 
 const CPS = 40; // 1秒に出る文字数
 
 const $ = id => document.getElementById(id);
 const faces = {};
-export function getFaces(id) { return (faces[id] ||= buildPortraits(FACES[id])); }
+export function getFaces(id) {
+  const key = (game.looks && game.looks[id]) || id;
+  return (faces[key] ||= buildPortraits(FACES[key]));
+}
 
 let queue = null;   // { lines, i, shown, full, resolve }
 

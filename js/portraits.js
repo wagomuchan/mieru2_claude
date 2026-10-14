@@ -95,6 +95,11 @@ function expression(g, ex, def) {
   g.stamp(11, 15, eyes);
   if (ex === 'hurt') g.mirrorStamp(18, 15, eyes); else g.stamp(18, 15, eyes);
   if (BROWS[ex]) { g.stamp(11, 12, BROWS[ex]); g.mirrorStamp(18, 12, BROWS[ex]); }
+  if (def.eyes === 'soft' && eyes[0] === 'kkk') {
+    // まぶたが すこし さがった、のんびり目
+    g.rect(11, 15, 3, 1, 'S'); g.rect(18, 15, 3, 1, 'S');
+    g.rect(11, 16, 3, 1, 'k'); g.rect(18, 16, 3, 1, 'k');
+  }
   if (def.eyes === 'sharp' && eyes[0] === 'kkk') {
     g.put(10, 15, 'k'); g.put(21, 15, 'k');
     g.rect(11, 19, 3, 1, 'S'); g.rect(18, 19, 3, 1, 'S');
@@ -181,10 +186,31 @@ const HAIRS = {
       g.rect(10, 5, 5, 1, 'H'); g.rect(18, 5, 4, 1, 'H'); g.rect(8, 7, 2, 1, 'H');
     },
   },
+  // サクラ：ゆるい ボブに、まるい おだんご ふたつ
+  twinbun: {
+    back(g) {
+      g.ellipse(16, 13, 12, 10, 'h');
+      g.rect(5, 13, 22, 8, 'h');
+      g.ellipse(7.5, 3.5, 4, 3.5, 'h'); g.ellipse(24.5, 3.5, 4, 3.5, 'h');
+      g.rect(5, 20, 2, 3, 'd'); g.rect(25, 20, 2, 3, 'd');
+    },
+    front(g) {
+      g.ellipse(16, 9, 10, 7, 'h');
+      g.rect(7, 9, 18, 3, 'h');
+      // ふんわり 前髪
+      g.stamp(8, 12, ['hhhhhh.hhhhhhhhh', 'hhh.hh..hhh.hhhh', '.h...h...h...hh.']);
+      for (let y = 12; y < 22; y++) { g.rect(6, y, 2, 1, 'h'); g.rect(24, y, 2, 1, 'h'); }
+      g.rect(6, 20, 2, 2, 'd'); g.rect(24, 20, 2, 2, 'd');
+      // おだんごの つや
+      g.rect(6, 1, 2, 1, 'H'); g.rect(23, 1, 2, 1, 'H'); g.put(5, 2, 'H'); g.put(22, 2, 'H');
+      g.rect(10, 5, 5, 1, 'H'); g.rect(18, 5, 3, 1, 'H');
+    },
+  },
 };
 
 // かざり
 const ACCS = {
+  leaf(g) { g.stamp(21, 6, ['..gg', '.gGg', 'gGg.', 'gg..']); g.put(20, 9, 'd'); },
   bigRibbon(g) {
     // 頭の右うえに、大きな リボン
     g.stamp(16, 0, [
@@ -209,7 +235,7 @@ const BASE = {
   m: '#b04048', M: '#ff8a90', b: '#a8d8ff',
   h: '#6a4a3a', H: '#9a7058', d: '#4a3028',
   c: '#6fae7a', C: '#4a8058', a: '#fff6e6',
-  r: '#e8466a', R: '#ff8fae', y: '#ffd860', Y: '#f0a020',
+  r: '#e8466a', R: '#ff8fae', y: '#ffd860', Y: '#f0a020', g: '#5aa04a', G: '#8ad070',
 };
 
 function render(g, pal) {

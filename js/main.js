@@ -6,8 +6,8 @@ import { initInput, input, readKeys, takeTap } from './input.js';
 import { say, ask, isTalking, updateTalk, advanceTalk, setPlace, fade } from './ui.js';
 import { BattleView } from './battle/view.js';
 import { AREAS } from './battle/areas.js';
-import { game, restAll, joinParty, newGame, autoSave, saveGame, latestSave, loadSave } from './game.js';
-import { story } from './story/ch1.js';
+import { game, restAll, joinParty, newGame, newGameChapter2, enterChapter2, autoSave, saveGame, latestSave, loadSave } from './game.js';
+import { currentStory } from './story/index.js';
 import { openMenu, isMenuOpen } from './menu.js';
 
 const app = document.getElementById('app');
@@ -56,7 +56,7 @@ function frame(now) {
     if (isTalking()) advanceTalk();
     else if (!busy) {
       const res = field.interact();
-      if (res) runEvent(() => story.onTalk(res.target, res.lines, api));
+      if (res) runEvent(() => currentStory().onTalk(res.target, res.lines, api));
     }
   }
 
@@ -70,7 +70,7 @@ function frame(now) {
     menuBtn.classList.toggle('hidden', busy || isTalking());
     if (!busy) {
       if (field.warp) { const w = field.warp; field.warp = null; runEvent(() => api.goto(w.to, w.tx, w.ty, w.dir)); }
-      else if (field.trigger) { const t = field.trigger; field.trigger = null; runEvent(() => story.onTrigger(t.id, api)); }
+      else if (field.trigger) { const t = field.trigger; field.trigger = null; runEvent(() => currentStory().onTrigger(t.id, api)); }
       else if (field.encounter) { const s = field.encounter; runEvent(() => fieldBattle(s)); }
     }
     field.draw(ctx, W, H);
@@ -101,6 +101,7 @@ const followerIds = () => game.partyIds.filter(id => id !== 'shimeru');
 
 // マップを 読みこむ（tx, ty はタイル単位。pos はドット単位）
 function loadMap(id, opts = {}) {
+  document.getElementById('version').textContent = game.chapter === 2 ? '第二章' : '第一章';
   const data = MAPS[id]();
   const start = opts.pos ? opts.pos
     : opts.tx != null ? { x: opts.tx * T + 8, y: opts.ty * T + 12, dir: opts.dir || 'down' } : null;
@@ -130,13 +131,16 @@ const api = {
   remove: id => field.removeActor(id),
   hide(id, on = true) { const a = field.actor(id); if (a) a.hidden = on; },
   tint(t) { field.tint = t; },
+  addBig: (id, look, tx, ty, dark) => field.addBig(id, look, tx, ty, dark),
+  removeBig: id => field.removeBig(id),
+  tp(tx, ty, dir) { field.teleport(tx * T + 8, ty * T + 12, dir); },
   // 別の マップへ（フェードつき）
   async goto(id, tx, ty, dir) {
     await fade(true);
     loadMap(id, { tx, ty, dir });
     await sleep(150);
     await fade(false);
-    await story.onEnter(id, api);
+    await currentStory().onEnter(id, api);
   },
   // 物語を 進めて、いまの マップを 作りなおす
   setPhase(p) {
@@ -181,6 +185,16 @@ const api = {
     return 'lose';
   },
   sleep,
+  // 第二章を はじめる（一章の 強さは そのまま）
+  async startChapter2() {
+    await fade(true);
+    enterChapter2();
+    loadMap(currentStory().startMap);
+    await sleep(300);
+    await fade(false);
+    await currentStory().onNewGame(api);
+  },
+  refreshLooks() { field.refreshLooks(); },
 };
 
 // ───────── タイトル ─────────
@@ -195,20 +209,23 @@ function showTitle() {
   }
 }
 
-async function startGame(fromSave) {
+async function startGame(fromSave, chapter2) {
   title.classList.add('fade');
   setTimeout(() => title.classList.add('hidden'), 900);
   input.taps.length = 0;
   if (fromSave) {
     loadSave(fromSave);
     loadMap(game.map, game.pos ? { pos: game.pos } : {});
+  } else if (chapter2) {
+    newGameChapter2();
+    loadMap(currentStory().startMap);
   } else {
     newGame();
     loadMap('miramar');
   }
   mode = 'field';
   await sleep(600);
-  runEvent(() => (fromSave ? story.onResume(api) : story.onNewGame(api)));
+  runEvent(() => (fromSave ? currentStory().onResume(api) : currentStory().onNewGame(api)));
 }
 
 async function boot() {
@@ -235,6 +252,10 @@ async function boot() {
     startGame(null);
   });
   document.getElementById('tcontinue').addEventListener('click', () => startGame(latestSave()));
+  document.getElementById('tch2').addEventListener('click', () => {
+    if (latestSave() && !confirm('第二章から あそびますか？\n（一章を クリアしたくらいの 強さで はじまります）')) return;
+    startGame(null, true);
+  });
   menuBtn.addEventListener('click', () => { if (mode === 'field' && !busy && !isTalking()) openMenu(api); });
 
   requestAnimationFrame(t => { last = t; frame(t); });

@@ -254,6 +254,26 @@ const HAIR = {
   },
 };
 
+// おだんご ふたつ（サクラ。さくらもちみたいに まるい）
+HAIR.twinbun = {
+  down: { back: [], front: [
+    [0, '..hhh....hhh....'.slice(0, 16)], [1, '.hHhhh..hhHhh...'], [2, '.hhhhhhhhhhhhh..'],
+    [3, '..hhhhhhhhhhhh..'], [4, '..hHhhhhhhhhhh..'], [5, '..hhhhhhhhhhhh..'], [6, '..hhhhhhhhhhhh..'],
+    [7, '..hhhhhhhhhhhh..'], [8, '..hhh.hhhh.hhh..'], [9, '..hh........hh..'], [10, '..hh........hh..'],
+    [11, '..hd........dh..'],
+  ] },
+  up: { back: [], front: [
+    [0, '..hhh....hhh....'], [1, '.hhhhh..hhhhh...'], [2, '.hhhhhhhhhhhhh..'],
+    [3, '..hhhhhhhhhhhh..'], ...range(4, 12).map(r => [r, '..hhhhhhhhhhhh..']), [12, '..hdhhhhhhhhdh..'],
+  ] },
+  right: { back: [], front: [
+    [0, '.hhh............'], [1, 'hhHhh...........'], [2, 'hhhhhhhhhhh.....'],
+    [3, '..hhhhhhhhhhh...'], [4, '..hhhhhhhhhhhh..'], [5, '..hhhhhhhhhhhh..'], [6, '..hhhhhhhhhhhh..'],
+    [7, '..hhhhhhhhhhhh..'], [8, '..hhhhhhhhh.hh..'], [9, '..hhhhhh........'], [10, '..hhhhhh........'],
+    [11, '..hdhhhd........'],
+  ] },
+};
+
 // 顔の 見えない フード
 const HOOD_FULL = r => [r, '..hhhhhhhhhhhh..'];
 HAIR.hood = {
@@ -299,6 +319,18 @@ const ACC = {
       [4, '.rr.............'],
     ],
   },
+  // さくらの 葉っぱの 髪かざり
+  leaf: {
+    down: [[1, '.......gG.......'], [2, '......gg........']],
+    up: [[1, '.......gG.......']],
+    right: [[1, '....gG..........'], [2, '...gg...........']],
+  },
+  // 背中で むすんだ リボン（エレシア：シメールの リボンを かりている）
+  backRibbon: {
+    down: [[17, '..r..........r..']],
+    up: [[15, '.....rr..rr.....'], [16, '.....rRrrRr.....'], [17, '......rrrr......'], [18, '.....r....r.....']],
+    right: [[15, '..rr............'], [16, '.rRr............'], [17, '..rr............'], [18, '..r.............']],
+  },
   apron: {
     down: [
       [15, '.....aaaaaa.....'],
@@ -329,7 +361,7 @@ const BASE_PAL = {
   l: '#ffd9b8', f: '#6a3a2a',
   h: '#6a4a3a', H: '#9a7058', d: '#4a3028',
   c: '#7a8ab0', C: '#5a6890', a: '#fff6e6', A: '#d8ccb4',
-  r: '#e8466a', R: '#ff8aa6', b: '#8a5a30', B: '#b07a40',
+  r: '#e8466a', R: '#ff8aa6', b: '#8a5a30', B: '#b07a40', g: '#5aa04a', G: '#8ad070',
 };
 
 function paint(ctx, rows, pal) {
@@ -385,12 +417,13 @@ export function buildCharacter(def) {
       paint(ctx, legsSet[step], pal);
       paint(ctx, BODY[dir], pal);
       if (dir !== 'up') {
-        for (const a of acc) if (a !== ACC.bigRibbon) paint(ctx, a[dir] || [], pal);
+        for (const a of acc) if (a !== ACC.bigRibbon && a !== ACC.leaf) paint(ctx, a[dir] || [], pal);
       }
       paint(ctx, HEAD[dir], pal);
       paint(ctx, hair[dir].front, pal);
-      if (dir === 'up') for (const a of acc) if (a !== ACC.bigRibbon) paint(ctx, a[dir] || [], pal);
+      if (dir === 'up') for (const a of acc) if (a !== ACC.bigRibbon && a !== ACC.leaf) paint(ctx, a[dir] || [], pal);
       if (acc.includes(ACC.bigRibbon)) paint(ctx, ACC.bigRibbon[dir], pal);
+      if (acc.includes(ACC.leaf)) paint(ctx, ACC.leaf[dir], pal);
       outline(cv);
       return cv;
     });

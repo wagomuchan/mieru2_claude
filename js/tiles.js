@@ -7,7 +7,8 @@ const VARIANTS = 4;
 // タイルの種類
 //  g 草  f 花  c 石だたみ  d 土  s 砂  p 桟橋  ~ 海
 //  F 石のゆか  W かべ  V まっくら（中には入れない）
-export const SOLID_TILES = new Set(['~', 'W', 'V']);
+//  a アスファルト  A アスファルト（黄色い線）  C とうもろこし（入れない）
+export const SOLID_TILES = new Set(['~', 'W', 'V', 'C']);
 
 function px(ctx, x, y, c) { ctx.fillStyle = c; ctx.fillRect(x, y, 1, 1); }
 
@@ -80,7 +81,47 @@ function stoneFloor(ctx, r) {
   for (let i = 0; i < 4; i++) px(ctx, r() * T | 0, r() * T | 0, '#625c6c');
 }
 
-const MAKERS = { g: grass, f: flowers, c: cobble, d: dirt, s: sand, p: pier, F: stoneFloor };
+function asphalt(ctx, r) {
+  ctx.fillStyle = '#5c5a66'; ctx.fillRect(0, 0, T, T);
+  for (let i = 0; i < 14; i++) px(ctx, r() * T | 0, r() * T | 0, r() < 0.5 ? '#68667a' : '#504e5a');
+}
+function asphaltLine(ctx, r) {
+  asphalt(ctx, r);
+  ctx.fillStyle = '#f0c840'; ctx.fillRect(2, 7, 7, 2);
+}
+function corn(ctx, r) {
+  ctx.fillStyle = '#6a4a2a'; ctx.fillRect(0, 0, T, T);
+  for (let i = 0; i < 8; i++) px(ctx, r() * T | 0, r() * T | 0, '#5a3a20');
+  for (const x of [2, 7, 12]) {
+    const h = 2 + (r() * 2 | 0);
+    ctx.fillStyle = '#4a7a2a'; ctx.fillRect(x, h, 2, T - h);
+    ctx.fillStyle = '#6aa03a'; ctx.fillRect(x, h, 1, T - h);
+    // 葉っぱ
+    ctx.fillStyle = '#7ab84a';
+    ctx.fillRect(x - 2, 7, 2, 1); ctx.fillRect(x - 3, 8, 1, 1);
+    ctx.fillRect(x + 2, 10, 2, 1); ctx.fillRect(x + 4, 11, 1, 1);
+    ctx.fillRect(x - 2, 13, 2, 1);
+    // 実
+    ctx.fillStyle = '#f0d050'; ctx.fillRect(x + 2, 5, 2, 3);
+    ctx.fillStyle = '#c8a030'; ctx.fillRect(x + 2, 7, 2, 1);
+    // ふさ
+    ctx.fillStyle = '#e8c870'; ctx.fillRect(x, h - 2, 1, 2); ctx.fillRect(x + 1, h - 1, 1, 1);
+  }
+}
+function sawdust(ctx, r) {
+  ctx.fillStyle = '#d8b880'; ctx.fillRect(0, 0, T, T);
+  for (let i = 0; i < 14; i++) px(ctx, r() * T | 0, r() * T | 0, r() < 0.5 ? '#c8a468' : '#ecd0a0');
+}
+function wood(ctx, r) {
+  ctx.fillStyle = '#8a6a48'; ctx.fillRect(0, 0, T, T);
+  for (let x = 0; x < T; x += 4) {
+    ctx.fillStyle = '#6a4e34'; ctx.fillRect(x + 3, 0, 1, T);
+    ctx.fillStyle = '#9a7a56'; ctx.fillRect(x, 0, 1, T);
+    ctx.fillStyle = '#6a4e34'; ctx.fillRect(x, r() * 14 | 0, 3, 1);
+  }
+}
+
+const MAKERS = { g: grass, f: flowers, c: cobble, d: dirt, s: sand, p: pier, F: stoneFloor, a: asphalt, A: asphaltLine, C: corn, z: sawdust, w: wood };
 const cache = {};
 
 export function tileImage(ch, x, y) {

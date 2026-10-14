@@ -17,6 +17,13 @@ const BG = {
   rocks: ['#3a1a1a', '#7a2a3a', '#e88a4a', '#ffe0a0'],
   black: ['#000000', '#1a0a2a', '#5a1a4a', '#c83a5a'],
   tower: ['#101a3a', '#2a3a7a', '#7a8ad8', '#e0e8ff'],
+  farm: ['#3a2a0a', '#8a6a2a', '#e8c860', '#fff4b0'],
+  maze: ['#1a3a0a', '#4a7a2a', '#a8d060', '#f4f8b0'],
+  maze_black: ['#000000', '#1a2a0a', '#4a5a1a', '#a8a02a'],
+  factory1: ['#2a1a2a', '#6a3a4a', '#e8466a', '#f0c040'],
+  factory2: ['#1a1a3a', '#3a3a7a', '#4a7ac8', '#c8d0dc'],
+  factory_black: ['#000000', '#2a0a1a', '#6a1a3a', '#e8466a'],
+  boss2: ['#2a0a3a', '#6a2a8a', '#e8466a', '#f0c040', '#ffffff'],
   boss: ['#1a0a0a', '#5a1a0a', '#d8602a', '#ffe070', '#ffffff'],
 };
 
@@ -189,7 +196,8 @@ export class BattleView {
 
   card(box, text, learn) {
     const c = document.createElement('div');
-    c.className = 'pcard' + (learn ? ' learn' : '') + ' at' + this.boxes.indexOf(box);
+    const i = this.boxes.indexOf(box), four = this.boxes.length >= 4;
+    c.className = 'pcard' + (learn ? ' learn' : '') + ' at' + (four ? (i % 2 ? 2 : 0) : i);
     c.textContent = text;
     box.el.appendChild(c);
     setTimeout(() => c.remove(), 1700);
@@ -198,6 +206,7 @@ export class BattleView {
   buildBoxes() {
     const wrap = $('pboxes');
     wrap.innerHTML = '';
+    wrap.classList.toggle('four', game.party.length >= 4);
     this.boxes = game.party.map(m => {
       const el = document.createElement('div');
       el.className = 'pbox' + (m.hp <= 0 ? ' fainted' : '');

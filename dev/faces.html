@@ -1,15 +1,15 @@
 <!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="background:#14122a;margin:0">
-<canvas id="c" width="1100" height="560"></canvas>
+<canvas id="c" width="1100" height="820"></canvas>
 <script type="module">
 import { buildPortraits, EXPRESSIONS } from '../js/portraits.js';
 import { buildCharacter } from '../js/sprites.js';
 import { FACES, CHARS } from '../js/chars.js';
 const c=document.getElementById('c').getContext('2d'); c.imageSmoothingEnabled=false;
 let y=4;
-for (const k of ['shimeru','elesia','meina']) {
+for (const k of ['shimeru','elesia','meina','sakura','shimeru_nr']) {
   const f=buildPortraits(FACES[k]); let x=4;
   for (const ex of EXPRESSIONS) { c.drawImage(f[ex],x,y,128,128); x+=132; }
   y+=134;
 }
-let x=4; for (const k of ['shimeru','elesia','meina']) { const s=buildCharacter(CHARS[k]); for (const d of ['down','up','right']) { c.drawImage(s[d][0],x,y+4,64,96); x+=68; } x+=20; }
+let x=4; for (const k of ['shimeru','elesia','meina','sakura','shimeru_nr']) { const s=buildCharacter(CHARS[k]); for (const d of ['down','up','right']) { c.drawImage(s[d][0],x,y+4,64,96); x+=68; } x+=20; }
 </script></body></html>
