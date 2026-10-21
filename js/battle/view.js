@@ -178,6 +178,10 @@ export class BattleView {
       const hpM = '/' + m.max.hp, mpM = '/' + m.max.mp;
       if (b.hpMaxEl.textContent !== hpM) b.hpMaxEl.textContent = hpM;
       if (b.mpMaxEl.textContent !== mpM) b.mpMaxEl.textContent = mpM;
+      // 覚醒：これまでの 合計と、 この戦闘で ふえた 回数
+      const awT = m.awaken + '回', awN = `今回+${m.awaken - b.awStart}`;
+      if (b.awTotalEl.textContent !== awT) b.awTotalEl.textContent = awT;
+      if (b.awNowEl.textContent !== awN) { b.awNowEl.textContent = awN; b.awNowEl.classList.toggle('up', m.awaken > b.awStart); }
       b.hpRow.classList.toggle('low', b.hpTo > 0 && b.hpTo < m.max.hp * 0.3);
       if (b.faceT > 0 && (b.faceT -= dt) <= 0) this.setFace(b, this.restFace(b), 0);
     }
@@ -212,11 +216,13 @@ export class BattleView {
       el.className = 'pbox' + (m.hp <= 0 ? ' fainted' : '');
       el.innerHTML = `<div class="pname">${m.name}</div><canvas></canvas>
         <div class="prow hp"><b>HP</b><span><span class="roll"></span><span class="max"></span></span></div>
-        <div class="prow"><b>MP</b><span><span class="roll"></span><span class="max"></span></span></div>`;
+        <div class="prow"><b>MP</b><span><span class="roll"></span><span class="max"></span></span></div>
+        <div class="pawk"><b>覚醒</b><span class="atotal"></span><span class="anow"></span></div>`;
       wrap.appendChild(el);
       const rolls = el.querySelectorAll('.roll');
       const maxes = el.querySelectorAll('.max');
       const b = { el, member: m, canvas: el.querySelector('canvas'), hpEl: rolls[0], mpEl: rolls[1], hpMaxEl: maxes[0], mpMaxEl: maxes[1], hpRow: el.querySelector('.prow.hp'),
+        awTotalEl: el.querySelector('.atotal'), awNowEl: el.querySelector('.anow'), awStart: m.awaken,
         hp: m.hp, hpTo: m.hp, mp: m.mp, mpTo: m.mp, face: null, faceT: 0 };
       this.setFace(b, this.restFace(b), 0);
       return b;

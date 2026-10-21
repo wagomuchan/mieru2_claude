@@ -33,7 +33,14 @@ function resize() {
   const style = getComputedStyle(app);
   const innerW = appRect.width - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
   const innerH = appRect.height - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
-  const cssH = Math.round(Math.min(innerH * 0.58, innerW * 1.3));
+  let cssH = Math.round(Math.min(innerH * 0.58, innerW * 1.3));
+  // 戦闘中は、下の 戦闘画面（4人の 箱・メッセージ・ボタン）が ぜんぶ 入るように 上の 絵を ちぢめる
+  if (mode === 'battle') {
+    const ui = document.getElementById('battleui'), panel = document.getElementById('panel');
+    const ps = getComputedStyle(panel), us = getComputedStyle(ui);
+    const need = ui.offsetHeight + parseFloat(us.marginTop) + parseFloat(ps.paddingTop) + parseFloat(ps.paddingBottom) + parseFloat(ps.borderTopWidth) + 4;
+    cssH = Math.max(Math.round(innerH * 0.3), Math.min(cssH, Math.floor(innerH - need)));
+  }
   screenEl.style.height = cssH + 'px';
   const devW = Math.round(innerW * dpr), devH = Math.round(cssH * dpr);
   const scale = Math.max(1, Math.round(devW / 240));
@@ -169,12 +176,15 @@ const api = {
     place.classList.add('hidden');
     hint.classList.add('hidden');
     menuBtn.classList.add('hidden');
-    const result = await battleView.run(group, area);
+    const running = battleView.run(group, area);
+    resize();
+    const result = await running;
     place.classList.remove('hidden');
-    if (result === 'win') { mode = 'field'; return 'win'; }
-    if (opts.noLoseReturn) { mode = 'field'; return 'lose'; }
+    if (result === 'win') { mode = 'field'; resize(); return 'win'; }
+    if (opts.noLoseReturn) { mode = 'field'; resize(); return 'lose'; }
     await fade(true);
     mode = 'field';
+    resize();
     restAll();
     const r = game.rest || { map: 'miramar', x: 15.5 * T + 8, y: 12 * T + 12, dir: 'down' };
     loadMap(r.map, { pos: { x: r.x, y: r.y, dir: r.dir } });

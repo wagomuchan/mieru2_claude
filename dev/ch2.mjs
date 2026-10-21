@@ -70,6 +70,11 @@ await p.evaluate(() => { window.__mieru.api.goto('maple', 32, 35, 'up'); });
 await p.waitForTimeout(1500);
 await talkAt(32, 34, 'up'); await advance((() => { let n = 0; return () => (n++ === 2 ? 2 : 0); })());
 console.log('rest4', await p.evaluate(() => JSON.stringify(window.__mieru.game.naka)));
+// テスト用に つよくする（工場の 妖怪に 負けないように）
+await p.evaluate(async () => {
+  const c = await import('./js/battle/core.js');
+  for (const m of window.__mieru.game.party) { c.growMember(m, 80, Math.random); m.hp = m.max.hp; m.mp = m.max.mp; }
+});
 // 工場
 await p.evaluate(() => { window.__mieru.api.goto('factory1', 7.5, 11, 'up'); });
 await p.waitForTimeout(1500); await advance();
@@ -77,11 +82,6 @@ await p.screenshot({ path: out + '/d8_factory1.png' });
 await p.evaluate(() => { window.__mieru.api.goto('factory2', 15, 12, 'left'); });
 await p.waitForTimeout(1500); await advance();
 await p.screenshot({ path: out + '/d9_factory2.png' });
-// テスト用に つよくする
-await p.evaluate(async () => {
-  const c = await import('./js/battle/core.js');
-  for (const m of window.__mieru.game.party) { c.growMember(m, 80, Math.random); m.hp = m.max.hp; m.mp = m.max.mp; }
-});
 await p.evaluate(() => { const f = window.__mieru.field; f.teleport(7 * 16 + 8, 6 * 16 + 12, 'up'); }); await p.waitForTimeout(400);
 await advance(0, 800, { text: 'ボタンが 降ってきた', name: 'd10_rain.png' });
 console.log('after boss', await state());

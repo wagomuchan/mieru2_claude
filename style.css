@@ -166,6 +166,11 @@ html, body {
 .prow .max { font-size: 11px; color: var(--dim); }
 .roll { font-variant-numeric: tabular-nums; letter-spacing: .04em; }
 .prow.low .roll { color: #ff8a8a; }
+.pawk { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 4px; font-size: 11px; white-space: nowrap; margin-top: 2px; padding-top: 2px; border-top: 1px solid #333; }
+.pawk b { font-weight: normal; color: var(--dim); font-size: 10px; }
+.pawk .atotal { font-variant-numeric: tabular-nums; }
+.pawk .anow { margin-left: auto; color: var(--dim); }
+.pawk .anow.up { color: #ffd060; }
 .pcard {
   position: absolute;
   left: 50%;
@@ -356,8 +361,9 @@ html, body {
 .diary-item { display: block; width: 100%; text-align: left; margin: 6px 0; font-size: 15px; }
 .diary-text { white-space: pre-wrap; font-size: 15px; line-height: 1.9; }
 .member { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin-bottom: 18px; }
-.member canvas { grid-row: span 2; image-rendering: pixelated; }
+.member canvas { grid-row: span 3; image-rendering: pixelated; }
 .member .mname { color: var(--accent); }
+.member .mawk { color: #ffd060; font-size: 14px; }
 .member .mstats { font-size: 13px; color: #ddd; }
 .member .mskills { grid-column: 1 / -1; font-size: 13px; color: var(--dim); }
 .pair { display: flex; align-items: center; gap: 8px; margin: 10px 0; }

@@ -84,8 +84,9 @@ function nakama(body) {
     paintPortrait(cv, getFaces(def.face).normal, 56);
     box.appendChild(cv);
     box.appendChild(el('div', 'mname', `${def.name}　${def.job}・${def.personality}`));
+    box.appendChild(el('div', 'mawk', `これまでの 覚醒：${m.awaken}回`));
     box.appendChild(el('div', 'mstats',
-      `覚醒 ${m.awaken}回\nHP ${m.hp}/${m.max.hp}　MP ${m.mp}/${m.max.mp}\n` +
+      `HP ${m.hp}/${m.max.hp}　MP ${m.mp}/${m.max.mp}\n` +
       ['atk', 'def', 'mag', 'spd'].map(k => `${STAT_NAMES[k]} ${m.max[k]}`).join('　')));
     box.lastChild.style.whiteSpace = 'pre-wrap';
     box.appendChild(el('div', 'mskills', 'わざ：' + m.skills.map(s => SKILLS[s].name).join('、')));
