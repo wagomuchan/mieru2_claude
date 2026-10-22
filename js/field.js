@@ -123,6 +123,13 @@ export class Field {
     for (const s of this.symbols) Object.assign(s, { x: s.homeX, y: s.homeY, gone: false, goal: null });
   }
 
+  // いま 画面に うつっている 場所か（margin ぶん 外がわも 含める）
+  onScreen(x, y, margin = 0) {
+    const v = this.view;
+    if (!v) return false;
+    return x > v.x0 - margin && x < v.x1 + margin && y > v.y0 - margin && y < v.y1 + margin + 16;
+  }
+
   // 戦いに勝ったら シンボルは しばらく いなくなる
   defeat(sym) { sym.gone = true; sym.respawnAt = this.t + 40; this.safe = 2; }
   escape() { this.safe = 2.5; }
@@ -278,20 +285,22 @@ export class Field {
     const p = this.player;
     for (const s of this.symbols) {
       if (s.gone) {
-        if (this.t > s.respawnAt && Math.hypot(s.homeX - p.x, s.homeY - p.y) > 140) Object.assign(s, { gone: false, x: s.homeX, y: s.homeY, goal: null });
+        // 画面の 外で だけ もどってくる（見えている ところに いきなり あらわれないように）
+        if (this.t > s.respawnAt && Math.hypot(s.homeX - p.x, s.homeY - p.y) > 140 && !this.onScreen(s.homeX, s.homeY, 24)) Object.assign(s, { gone: false, x: s.homeX, y: s.homeY, goal: null, sub: 0 });
         continue;
       }
       const d = Math.hypot(p.x - s.x, p.y - s.y);
       if (this.safe <= 0 && d < 15) { this.encounter = s; return; }
       const chase = this.safe <= 0 && d < 64;
-      s.sub += chase ? (DARK_AREAS.has(s.area) ? 0.75 : 0.6) : 0.35;
       if (chase) s.goal = [p.x, p.y];
       else if (!s.goal && (s.wait -= TICK) <= 0) {
         s.goal = [Math.round(s.homeX + (this.rand() * 2 - 1) * 28), Math.round(s.homeY + (this.rand() * 2 - 1) * 20)];
       }
-      if (!s.goal) continue;
+      // 止まっている あいだは 歩く ぶんを ためない（ためると、動きだした しゅんかんに ワープして 見える）
+      if (!s.goal) { s.sub = 0; continue; }
       const vx = s.goal[0] - s.x, vy = s.goal[1] - s.y;
-      if (Math.abs(vx) < 1 && Math.abs(vy) < 1) { s.goal = null; s.wait = 1 + this.rand() * 2; continue; }
+      if (Math.abs(vx) < 1 && Math.abs(vy) < 1) { s.goal = null; s.sub = 0; s.wait = 1 + this.rand() * 2; continue; }
+      s.sub = Math.min(s.sub + (chase ? (DARK_AREAS.has(s.area) ? 0.75 : 0.6) : 0.35), 1.5);
       while (s.sub >= 1) {
         s.sub -= 1;
         const dx = Math.abs(vx) >= 1 ? Math.sign(vx) : 0, dy = Math.abs(vy) >= 1 ? Math.sign(vy) : 0;
@@ -307,25 +316,35 @@ export class Field {
     if (!a.wander || frozen) return;
     if (a.goal) {
       const vx = a.goal[0] - a.x, vy = a.goal[1] - a.y;
-      if ((Math.abs(vx) < 1 && Math.abs(vy) < 1) || a.stuck > 36) { a.goal = null; a.wait = 1.5 + this.rand() * 3; return; }
-      // 町の人は 4方向に、ゆっくり歩く
-      const horiz = Math.abs(vx) >= 1 && (Math.abs(vx) > Math.abs(vy) || Math.abs(vy) < 1);
-      const dx = horiz ? Math.sign(vx) : 0, dy = horiz ? 0 : Math.sign(vy);
-      a.dir = this.faceFrom(dx, dy);
-      a.moving = true;
+      if (Math.abs(vx) < 1 && Math.abs(vy) < 1) { this.npcRest(a); return; }
+      // 町の人は 4方向に、ゆっくり歩く。
+      // 横か 縦か を 1歩ごとに えらびなおすと、ななめに 行くとき 向きが ぱたぱた かわって 震えて 見えるので、
+      // 横を 歩ききってから 縦（または その逆）にする
+      if (!a.axis || (a.axis === 'x' && Math.abs(vx) < 1) || (a.axis === 'y' && Math.abs(vy) < 1)) {
+        a.axis = Math.abs(vx) >= 1 && (Math.abs(vx) >= Math.abs(vy) || Math.abs(vy) < 1) ? 'x' : 'y';
+      }
+      const dx = a.axis === 'x' ? Math.sign(vx) : 0, dy = a.axis === 'y' ? Math.sign(vy) : 0;
       a.sub = (a.sub || 0) + NPC_STEP;
       if (a.sub >= 1) {
         a.sub -= 1;
-        const ok = this.move(a, dx, dy);
-        a.stuck = ok ? 0 : (a.stuck || 0) + 1;
-        a.walkDist += 1;
+        // ぶつかったら（人や 壁）、むりに すりぬけようと せず、そこで 立ちどまる
+        if (this.free(a, a.x + dx, a.y + dy)) {
+          a.x += dx; a.y += dy;
+          a.walkDist += 1;
+          a.dir = this.faceFrom(dx, dy);
+          a.lastStep = this.t;
+        } else { this.npcRest(a); return; }
       }
+      a.moving = this.t - (a.lastStep ?? -1) < 0.1;
     } else if ((a.wait -= TICK) <= 0) {
       const r = a.wander * T;
       a.goal = [Math.round(a.homeX + (this.rand() * 2 - 1) * r), Math.round(a.homeY + (this.rand() * 2 - 1) * r)];
-      a.stuck = 0;
+      a.axis = null;
     }
   }
+
+  // 立ちどまって、すこし 休む
+  npcRest(a) { a.goal = null; a.axis = null; a.sub = 0; a.moving = false; a.wait = 1.5 + this.rand() * 3; }
 
   // 目の前の しらべられるもの
   findTarget() {
@@ -371,6 +390,7 @@ export class Field {
     const cx = mw <= W ? (mw - W) / 2 : clamp(p.x - W / 2, 0, mw - W);
     const cy = mh <= H ? (mh - H) / 2 : clamp(p.y - 8 - H / 2, 0, mh - H);
     this.cam.x = Math.round(cx); this.cam.y = Math.round(cy);
+    this.view = { x0: this.cam.x, y0: this.cam.y, x1: this.cam.x + W, y1: this.cam.y + H };
     const ox = -this.cam.x, oy = -this.cam.y;
 
     ctx.fillStyle = this.data.bg || '#3d7bd2'; ctx.fillRect(0, 0, W, H);
