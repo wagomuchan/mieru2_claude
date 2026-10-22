@@ -1,7 +1,7 @@
 // エリアの「手ごたえ」を はかる：node dev/feel.mjs <エリア> <覚醒回数,...> [人数3|4] [回数]
 // 負け率・へったHP（パーティー全体の 何%）・1戦の 秒数・1分あたりの 覚醒（1人あたり）
 import { Battle, newMember, growMember } from '../js/battle/core.js';
-import { AREAS } from '../js/battle/areas.js';
+import { AREAS, tuneFor } from '../js/battle/areas.js';
 import { rng } from '../js/util.js';
 
 export function measure(area, aw, n = 3, runs = 300, groups = AREAS[area]) {
@@ -12,7 +12,7 @@ export function measure(area, aw, n = 3, runs = 300, groups = AREAS[area]) {
     const party = ids.map(id => growMember(newMember(id), id === 'sakura' ? aw + 4 : aw, R));
     const total = party.reduce((s, m) => s + m.max.hp, 0);
     const before = party.reduce((s, m) => s + m.awaken, 0);
-    const b = new Battle(party, groups[r % groups.length], R);
+    const gg = groups[r % groups.length]; const b = new Battle(party, gg, R, { tune: tuneFor(area, gg) });
     let ev, low = 1;
     while ((ev = b.step())) {
       const l = ev.filter(e => e.t === 'msg').length; if (l) sec += 0.8 + (l - 1) * 0.28;
@@ -27,7 +27,7 @@ export function measure(area, aw, n = 3, runs = 300, groups = AREAS[area]) {
   return { lose: lose / runs, hpLost: hpLost / Math.max(1, wins), sec: sec / runs, awkPerMin: awk / Math.max(1, wins) / n / (sec / runs / 60), awkPerBattle: awk / Math.max(1, wins) / n, low: minHp / runs };
 }
 
-if (process.argv[1].endsWith('feel.mjs')) {
+if ((process.argv[1] || '').endsWith('feel.mjs')) {
   const [area, list, n = '3', runs = '300'] = process.argv.slice(2);
   for (const aw of list.split(',').map(Number)) {
     const m = measure(area, aw, +n, +runs);

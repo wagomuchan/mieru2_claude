@@ -107,7 +107,7 @@ export const ENEMY_DEFS = {
   },
   // ボス
   usokuidori: {
-    name: 'ウソクイドリ', lv: 60, look: 'usokuidori', boss: true, mul: { hp: 4.4, atk: 1.0, def: 1.05, mag: 1.1, spd: 1.0 },
+    name: 'ウソクイドリ', lv: 66, look: 'usokuidori', boss: true, mul: { hp: 4.4, atk: 1.0, def: 1.05, mag: 1.1, spd: 1.0 },
     moves: [
       [3, { kind: 'attack', verb: 'するどい くちばしで つついた！' }],
       [2, { kind: 'attack', target: 'all', power: 0.7, verb: 'おおきく はばたいた！ つよい 風！' }],
@@ -149,7 +149,7 @@ export const ENEMY_DEFS = {
     moves: [[3, { kind: 'attack', verb: 'チョキン！ と きりつけた！' }], [1, { kind: 'attack', hits: 3, power: 0.6, verb: 'チョキチョキ チョキチョキ チョキン！' }]],
   },
   botankakushi: {
-    name: 'ボタン隠し', lv: 140, look: 'botankakushi', boss: true, mul: { hp: 4.4, atk: 1.0, def: 1.05, mag: 1.1, spd: 1.15 },
+    name: 'ボタン隠し', lv: 152, look: 'botankakushi', boss: true, mul: { hp: 4.4, atk: 1.0, def: 1.05, mag: 1.1, spd: 1.15 },
     moves: [
       [3, { kind: 'attack', verb: 'ふくろで ぼかっと なぐった！' }],
       [2, { kind: 'magic', target: 'all', power: 16, verb: 'ボタンを ばらまいた！ いたい いたい！' }],
@@ -169,10 +169,10 @@ export const ENEMY_DEFS = {
 };
 
 // 敵の強さを lv から 計算する（仲間3人の 平均くらい）
-export function enemyStats(def) {
-  const L = def.lv, m = def.mul || {};
+export function enemyStats(def, lvAdd = 0, hpMul = 1) {
+  const L = def.lv + lvAdd, m = def.mul || {};
   const s = {
-    hp: (31 + 1.33 * L) * 6.5 * (m.hp ?? 1),
+    hp: (31 + 1.33 * L) * 6.5 * (m.hp ?? 1) * hpMul,
     mp: 99,
     atk: (6.4 + 0.25 * L) * (m.atk ?? 1),
     def: (6.3 + 0.25 * L) * (m.def ?? 1),

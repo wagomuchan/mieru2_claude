@@ -157,8 +157,9 @@ export function buildMiramar() {
   const symbols = P >= PH.PARTY && P <= PH.TOWER ? [
     { x: 4, y: 29, area: 'beach' }, { x: 10, y: 29, area: 'beach' }, { x: 16, y: 30, area: 'beach' },
     { x: 35, y: 31, area: 'cape' }, { x: 37, y: 25, area: 'cape' },
-    { x: 40, y: 27, area: 'black' }, { x: 41, y: 30, area: 'black' },
   ] : [];
+  // 黒い妖怪は、灯台へ 向かうころから（ボスの 手前で 鍛える 場所）
+  if (P === PH.TOWER) symbols.push({ x: 40, y: 27, area: 'black' }, { x: 41, y: 30, area: 'black' });
 
   return {
     id: 'miramar',

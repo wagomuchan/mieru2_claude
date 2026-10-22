@@ -69,6 +69,7 @@ export const story = {
     if (act === 'diner' && game.phase === PH.TOWN && !a.has('metSakura')) return dinerEvent(a);
     if (act === 'lab' && game.phase === PH.TOWN && a.has('metSakura')) return labEvent(a);
     if (act === 'rest') return restAtTent(a);
+    if (act === 'guide2') return guideEvent(a);
     if (act === 'contest' && game.phase === PH.FAIR) return contestEvent(a);
     if (act === 'walk2' && game.phase === PH.FAIR) return walkAgain(a);
     await a.say(lines);
@@ -420,6 +421,36 @@ async function mazeEvent(a) {
   a.setFollowersHere();
   addDiary('c2s2');
   addDiary('c2k1');
+}
+
+// ───────── 2かいの 案内役 ─────────
+async function guideEvent(a) {
+  if (!a.has('mocchiMet')) {
+    a.flag('mocchiMet');
+    await a.say([
+      '？？？|ぷぅ！',
+      `${SA}@surprise|あっ！ ダイナーで わたしの 桜餅を とっていった 子！`,
+      `${ME}@smile|ついてきて くれたんだ。 ……「もっちー」 って よぼう。`,
+      `${EL}|……また かってに 名前を つけてる。`,
+    ]);
+  }
+  const avg = game.party.reduce((s, m) => s + m.awaken, 0) / game.party.length;
+  // ボスの 勝率が 2割より下／5割くらいまで／それより上（dev/tune.mjs の 計算から）
+  if (avg < 127) {
+    await a.say(['もっちーは ぶるぶる ふるえている。', `${ME}|「ボタンの 山の 子は、 とても つよい。 まだ あぶない」…… って 言ってる 気がする。`]);
+  } else if (avg < 137) {
+    await a.say(['もっちーは すこし 心配そうに こちらを 見ている。', `${SA}|「もうすこし」…… でしょうか。`]);
+  } else {
+    await a.say(['もっちーは ぴょんぴょん はねている！', `${ME}@smile|「いまなら 勝てる！」 って 言ってる！`]);
+  }
+  const p = await a.ask(['もっちーの そばで 休む？'], ['休む', '休まない']);
+  if (p !== 0) return;
+  await a.fade(true);
+  a.restHere();
+  await a.wait(500);
+  await a.fade(false);
+  await a.say(['もっちーの そばで、 すこし 休んだ。', 'HPと MPが ぜんぶ かいふくした！ おうえんも 3回に もどった！']);
+  await askSave(a);
 }
 
 // ───────── ボス：ボタンカクシ ─────────
@@ -1200,7 +1231,7 @@ function goal() {
   if (P === PH.TOWN && !has('metSakura')) return 'メイプルホロウの 町を 見てまわろう。\n\nキャンプから 左へ 行くと 大通り。\nダイナー 「ドリスの店」は、 大通りの 北がわ、 左の ほう。\nダイナーを しらべると 入れる。\n\nつかれたら、 キャンプの 青い テントで 休める。';
   if (P === PH.TOWN) return 'サクラの 魔術研究所へ 行ってみよう。\n\n大通りの 南がわ、 まんなかへんの ピンクの 屋根の たてもの。\n研究所の まえで しらべると 入れる。';
   if (P === PH.MAZE) return 'ピピが とうもろこし畑の 迷路へ 行ってしまった！\n\n迷路の 入口は、 町の 右上。 とうもろこし畑の なかの 道を 上へ。\n迷路の まんなかを めざそう。\n\n牧場や 畑の まわり、 迷路の なかには ようかいが 出る。\nキャンプの 青い テントで 休める。';
-  if (P === PH.FACTORY) return '古い ボタン工場へ 行こう。\n\n工場は 町の 左下、 西の はずれ。\n2かいの おくに、 ボタンを かくした ようかいが いるらしい。\n\nキャンプの 青い テントで 休める。';
+  if (P === PH.FACTORY) return '古い ボタン工場へ 行こう。\n\n工場は 町の 左下、 西の はずれ。\n2かいの おくに、 ボタンを かくした ようかいが いるらしい。\n2かいの 階段の そばには ちいさな ようかいが いて、 休ませてくれる。\n\nキャンプの 青い テントでも 休める。';
   if (P === PH.FAIR) return '収穫祭の 夜。\n\n会場の ぶたいを しらべると、 サクラの 発明コンテストが はじまる。\n観覧車を しらべると、 ほかの ふたりで まつりを まわれる。';
   return '第二章 おわり。\n第三章は、 まだ ありません。';
 }

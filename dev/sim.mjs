@@ -5,9 +5,9 @@ import { Battle, newMember } from '../js/battle/core.js';
 const MSG_SEC = 0.8;
 const pick = a => a[Math.floor(Math.random() * a.length)];
 
-export function fight(party, group, { cheers = 0, heal = true } = {}) {
+export function fight(party, group, { cheers = 0, heal = true, tune = null } = {}) {
   if (heal) for (const m of party) { m.hp = m.max.hp; m.mp = m.max.mp; }
-  const b = new Battle(party, group);
+  const b = new Battle(party, group, Math.random, { tune });
   let msgs = 0, left = cheers, ev;
   while ((ev = b.step())) {
     const lines = ev.filter(e => e.t === 'msg').length;
@@ -19,7 +19,7 @@ export function fight(party, group, { cheers = 0, heal = true } = {}) {
   return { result: b.result, sec: msgs * MSG_SEC, rounds: b.round };
 }
 
-import { AREAS } from '../js/battle/areas.js';
+import { AREAS, tuneFor } from '../js/battle/areas.js';
 
 const plan = process.argv[2] || 'beach:8,cape:10,rocks:10,black:12';
 const RUNS = +(process.argv[3] || 200);
@@ -30,7 +30,7 @@ for (let r = 0; r < RUNS; r++) {
   for (const step of plan.split(',')) {
     const [area, n] = step.split(':');
     for (let i = 0; i < +n; i++) {
-      const res = fight(party, pick(AREAS[area]));
+      const g = pick(AREAS[area]); const res = fight(party, g, { tune: tuneFor(area, g) });
       const pa = perArea[area] ||= { sec: 0, n: 0, lose: 0 };
       pa.sec += res.sec; pa.n++; if (res.result !== 'win') pa.lose++;
       totals.sec += res.sec; totals.battles++; if (res.result !== 'win') totals.lose++;

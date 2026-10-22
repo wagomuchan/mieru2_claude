@@ -54,8 +54,8 @@ export function awakenChance(groupLv, count) {
   return 0.36 * f / (1 + count / 150);
 }
 
-export function groupLevel(enemyIds) {
-  const lvs = enemyIds.map(id => ENEMY_DEFS[id].lv);
+export function groupLevel(enemyIds, lvAdd = 0) {
+  const lvs = enemyIds.map(id => ENEMY_DEFS[id].lv + lvAdd);
   return Math.max(...lvs) + 4 * (lvs.length - 1);
 }
 
@@ -64,11 +64,13 @@ const STAGE = 0.3; // つよさ変化 1段階の 大きさ
 
 export class Battle {
   // opts.hearts(a, b): 2人の ハートの数（仲良し度）
+  // opts.tune: その場所の 強さの つまみ { lv: 足す強さ, hp: HPの 倍率 }
   constructor(members, enemyIds, rand = Math.random, opts = {}) {
     this.rand = rand;
     this.hearts = opts.hearts || (() => 0);
     this.nakaLog = [];   // [a, b, 点数]
-    this.groupLv = groupLevel(enemyIds);
+    const tune = opts.tune || {};
+    this.groupLv = groupLevel(enemyIds, tune.lv || 0);
     // 全滅したら 覚醒を取り消すための 控え
     this.snapshot = members.map(m => JSON.parse(JSON.stringify({ awaken: m.awaken, max: m.max, skills: m.skills })));
     this.members = members;
@@ -77,7 +79,7 @@ export class Battle {
     this.enemies = enemyIds.map((id, i) => {
       const def = ENEMY_DEFS[id];
       count[id] = (count[id] || 0) + 1;
-      const st = enemyStats(def);
+      const st = enemyStats(def, tune.lv || 0, tune.hp || 1);
       return {
         side: 'enemy', id, def, idx: i, name: def.name, letter: '',
         max: st, hp: st.hp, mp: st.mp, ...unitState(),

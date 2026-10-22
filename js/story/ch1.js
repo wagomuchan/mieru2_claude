@@ -419,9 +419,10 @@ async function guideEvent(a) {
     ]);
   }
   const avg = avgAwaken();
-  if (avg < 52) {
+  // ボスの 勝率が 2割より下／5割くらいまで／それより上（dev/tune.mjs の 計算から）
+  if (avg < 64) {
     await a.say(['ぷぅちゃんは ぶるぶる ふるえている。', `${ME}|「この先の 鳥は、 とても つよい。 まだ あぶない」…… って 言ってる 気がする。`]);
-  } else if (avg < 66) {
+  } else if (avg < 71) {
     await a.say(['ぷぅちゃんは すこし 心配そうに こちらを 見ている。', `${ME}|「もうすこし……」 かな。`]);
   } else {
     await a.say(['ぷぅちゃんは ぴょんぴょん はねている！', `${ME}@smile|「いまなら 勝てる！」 って 言ってる！`]);

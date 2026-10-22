@@ -212,9 +212,11 @@ export function buildFactory2() {
       { type: 'spool', x: 12, y: 3, w: 1, h: 1 }, { type: 'spool', x: 14, y: 5, w: 1, h: 1 },
       { type: 'conveyor', x: 10, y: 10, w: 5, h: 1 },
     ],
-    npcs: [], yokai: [],
+    npcs: [],
     symbols: boss ? [{ x: 12, y: 8, area: 'factory2' }, { x: 2, y: 10, area: 'factory_black' }] : [],
     bigs: boss ? [{ id: 'boss', look: 'botankakushi', x: 7, y: 5 }] : [],
+    // ボスの 手前の 案内役（ダイナーで 桜餅を とっていった 子）
+    yokai: boss ? [{ id: 'mocchi', x: 14, y: 11, wander: 1, action: 'guide2', talk: [['？？？|ぷぅ！']] }] : [],
     start: { x: 15, y: 12, dir: 'left' },
     warps: [{ x: 16, y: 12, w: 1, h: 1, to: 'factory1', tx: 15, ty: 2, dir: 'left' }],
     triggers: boss ? [{ id: 'boss2', x: 2, y: 2, w: 10, h: 5 }] : [],

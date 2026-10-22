@@ -1,6 +1,7 @@
 // 戦闘画面（MOTHER風）
 // 上：ぐにゃぐにゃ動く背景と 敵　下：顔つきHP欄・メッセージ・ボタン
 import { Battle } from './core.js';
+import { tuneFor } from './areas.js';
 import { SKILLS } from './data.js';
 import { enemyImage } from './enemygfx.js';
 import { game, hearts, addNaka } from '../game.js';
@@ -60,7 +61,7 @@ export class BattleView {
     const cols = BG[area] || BG.beach;
     this.pat1 = makePattern(cols, 0);
     this.pat2 = makePattern([...cols].reverse(), 2);
-    this.battle = new Battle(game.party, enemyIds, Math.random, { hearts });
+    this.battle = new Battle(game.party, enemyIds, Math.random, { hearts, tune: tuneFor(area, enemyIds) });
     this.cheerPending = false;
     this.intro = 0.6;
     this.sprites = this.battle.enemies.map(u => ({ u, img: enemyImage(u.def.look, u.def.dark), flash: 0, alpha: 1, dying: false, shake: 0 }));

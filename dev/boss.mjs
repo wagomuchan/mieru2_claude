@@ -1,7 +1,7 @@
 // ボス戦の 勝率：node dev/boss.mjs <エリア作戦> [回数]
 // 例：node dev/boss.mjs beach:5,cape:6,tower1:6,tower2:5   （まっすぐ進んだ場合）
 import { Battle, newMember } from '../js/battle/core.js';
-import { AREAS } from '../js/battle/areas.js';
+import { AREAS, tuneFor } from '../js/battle/areas.js';
 const pick = a => a[Math.floor(Math.random() * a.length)];
 const plan = process.argv[2] || 'beach:5,cape:6,tower1:6,tower2:5';
 const RUNS = +(process.argv[3] || 200);
@@ -12,7 +12,7 @@ for (let r = 0; r < RUNS; r++) {
     const [area, n] = step.split(':');
     for (let i = 0; i < +n; i++) {
       for (const m of party) { m.hp = m.max.hp; m.mp = m.max.mp; }
-      const b = new Battle(party, pick(AREAS[area]));
+      const g = pick(AREAS[area]); const b = new Battle(party, g, Math.random, { tune: tuneFor(area, g) });
       let ev; while ((ev = b.step())) { const l = ev.filter(e => e.t === 'msg').length; if (l) secs += 0.8 + (l - 1) * 0.28; if (b.round > 200) break; }
     }
   }

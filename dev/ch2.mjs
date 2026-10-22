@@ -73,7 +73,7 @@ console.log('rest4', await p.evaluate(() => JSON.stringify(window.__mieru.game.n
 // テスト用に つよくする（工場の 妖怪に 負けないように）
 await p.evaluate(async () => {
   const c = await import('./js/battle/core.js');
-  for (const m of window.__mieru.game.party) { c.growMember(m, 80, Math.random); m.hp = m.max.hp; m.mp = m.max.mp; }
+  for (const m of window.__mieru.game.party) { c.growMember(m, 150, Math.random); m.hp = m.max.hp; m.mp = m.max.mp; }
 });
 // 工場
 await p.evaluate(() => { window.__mieru.api.goto('factory1', 7.5, 11, 'up'); });

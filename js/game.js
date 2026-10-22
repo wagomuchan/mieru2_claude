@@ -44,10 +44,11 @@ export function enterChapter2() {
 }
 
 // タイトルの「第二章から」：一章を クリアしたくらいの 強さで はじめる
+// （一章の ボスに 6〜7割 勝てる 覚醒74回。dev/tune.mjs の 計算から）
 export function newGameChapter2() {
   newGame();
   const r = rng(4242);
-  for (const id of ['shimeru', 'elesia', 'meina']) growMember(game.members[id], 82, r);
+  for (const id of ['shimeru', 'elesia', 'meina']) growMember(game.members[id], 74, r);
   for (const [a, b] of [['shimeru', 'elesia'], ['shimeru', 'meina'], ['elesia', 'meina']]) addNaka(a, b, 95);
   game.diary = ['d1', 'd2', 'e1', 'd3', 'm1', 'd4', 'e2'];
   enterChapter2();

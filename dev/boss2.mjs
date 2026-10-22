@@ -1,7 +1,7 @@
 // 第二章 ボス戦の 勝率：node dev/boss2.mjs <作戦> [回数] [ボス]
 // 作戦の「|」より あとは サクラも いっしょ。 例：farm:4,maze:4|maze:3,factory1:6,factory2:4
 import { Battle, newMember, growMember } from '../js/battle/core.js';
-import { AREAS } from '../js/battle/areas.js';
+import { AREAS, tuneFor } from '../js/battle/areas.js';
 import { rng } from '../js/util.js';
 const pick = a => a[Math.floor(Math.random() * a.length)];
 const plan = process.argv[2] || 'farm:4,maze:4|factory1:6,factory2:4';
@@ -18,7 +18,7 @@ for (let r = 0; r < RUNS; r++) {
       const [area, k] = step.split(':');
       for (let i = 0; i < +k; i++) {
         for (const m of party) { m.hp = m.max.hp; m.mp = m.max.mp; }
-        const b = new Battle(party, pick(AREAS[area]));
+        const g = pick(AREAS[area]); const b = new Battle(party, g, Math.random, { tune: tuneFor(area, g) });
         let ev; while ((ev = b.step())) { const l = ev.filter(e => e.t === 'msg').length; if (l) secs += 0.8 + (l - 1) * 0.28; if (b.round > 200) break; }
         n++; if (b.result !== 'win') lose++;
       }
