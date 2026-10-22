@@ -27,6 +27,7 @@ export function initInput(root) {
   root.addEventListener('pointerdown', e => {
     if (pid !== null) return;
     if (e.target.closest && e.target.closest('button')) return; // ボタンは べつあつかい
+    if (e.target.closest && e.target.closest('#menu')) return;   // メニューの なかは 歩かない（スクロール用）
     pid = e.pointerId; ox = e.clientX; oy = e.clientY; t0 = performance.now();
     dragging = false;
     stick.style.left = ox + 'px'; stick.style.top = oy + 'px';
@@ -60,7 +61,11 @@ export function initInput(root) {
   root.addEventListener('pointercancel', end);
 
   // iPhoneで 画面が動いたり 拡大したり しないように
-  document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+  // ただし メニューの 中身は 指で スクロールできるように する
+  document.addEventListener('touchmove', e => {
+    if (e.target.closest && e.target.closest('#mbody')) return;
+    e.preventDefault();
+  }, { passive: false });
   document.addEventListener('gesturestart', e => e.preventDefault());
   document.addEventListener('dblclick', e => e.preventDefault());
 

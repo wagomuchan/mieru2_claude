@@ -353,6 +353,7 @@ html, body {
   line-height: 1.7;
   touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 #mclose { font-size: 17px; }
 .mh { color: var(--accent); font-size: 14px; margin: 14px 0 6px; }

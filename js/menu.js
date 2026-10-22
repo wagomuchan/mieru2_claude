@@ -65,6 +65,7 @@ function kiroku(body) {
     const b = el('button', 'btn diary-item', d.title);
     b.addEventListener('click', () => {
       body.innerHTML = '';
+      body.scrollTop = 0;   // 日記は いちばん上から 読む
       body.appendChild(el('div', 'mh', d.title));
       body.appendChild(el('div', 'diary-text', d.text));
       const back = el('button', 'btn mbtn', 'もどる');
