@@ -547,9 +547,12 @@ async function rainEvent(a) {
 // ───────── ふたり歩き ─────────
 const PAIRS4 = [['shimeru', 'elesia'], ['shimeru', 'meina'], ['shimeru', 'sakura'], ['elesia', 'meina'], ['elesia', 'sakura'], ['meina', 'sakura']];
 const label = ([x, y]) => `${NAMES[x]}と ${NAMES[y]}`;
+// 選択肢に 小さな 顔を つける
+const pairOpt = p => ({ label: label(p), faces: [p] });
+const allOpt = () => ({ label: 'みんなで すごす', faces: [game.partyIds] });
 
 async function pairWalk(a, first) {
-  const i = await a.ask(['だれと だれが いっしょに まわる？', '（のこりの ふたりも、 べつに まわるよ）'], PAIRS4.map(label));
+  const i = await a.ask(['だれと だれが いっしょに まわる？', '（のこりの ふたりも、 べつに まわるよ）'], PAIRS4.map(pairOpt));
   const [x, y] = PAIRS4[i];
   const pk = pairKey(x, y);
   await a.fade(true);
@@ -866,7 +869,7 @@ async function restAtTent(a) {
   }
 
   // 自由時間
-  const ft = await a.ask(['ねるまえの 自由時間。', 'だれと だれが いっしょに すごす？'], [...pairs.map(label), 'みんなで すごす']);
+  const ft = await a.ask(['ねるまえの 自由時間。', 'だれと だれが いっしょに すごす？'], [...pairs.map(pairOpt), allOpt()]);
   await a.fade(true);
   a.tint('evening');
   await a.wait(300);
@@ -883,10 +886,10 @@ async function restAtTent(a) {
   // へやわり
   let rooms;
   if (four) {
-    const r = await a.ask(['へやわり。 ふたりずつ、 ふたつの テントで ねるよ。'], ROOMS.map(roomLabel));
+    const r = await a.ask(['へやわり。 ふたりずつ、 ふたつの テントで ねるよ。'], ROOMS.map(r => ({ label: roomLabel(r), faces: r, wide: true })));
     rooms = ROOMS[r];
   } else {
-    const r = await a.ask(['へやわり。 だれと だれが 同じ テントで ねる？', '（のこりの ひとりは、 ピピたちと ねるよ）'], PAIRS3.map(label));
+    const r = await a.ask(['へやわり。 だれと だれが 同じ テントで ねる？', '（のこりの ひとりは、 ピピたちと ねるよ）'], PAIRS3.map(pairOpt));
     rooms = [PAIRS3[r]];
   }
   await a.fade(true);

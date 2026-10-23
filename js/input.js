@@ -63,7 +63,7 @@ export function initInput(root) {
   // iPhoneで 画面が動いたり 拡大したり しないように
   // ただし メニューの 中身は 指で スクロールできるように する
   document.addEventListener('touchmove', e => {
-    if (e.target.closest && e.target.closest('#mbody')) return;
+    if (e.target.closest && e.target.closest('#mbody, #choices.many')) return;
     e.preventDefault();
   }, { passive: false });
   document.addEventListener('gesturestart', e => e.preventDefault());

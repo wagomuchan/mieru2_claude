@@ -104,6 +104,22 @@ html, body {
   gap: 8px;
 }
 #choices.many button { font-size: 14px; padding: 10px 6px; }
+#choices.many {
+  overflow-y: auto;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: 3px;           /* ボタンの 白い ふちが きれないように */
+  margin: -3px;
+}
+#choices button.withfaces { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 4px 8px; }
+#choices button.wide { grid-column: 1 / -1; }
+.ofaces { display: flex; align-items: center; gap: 2px; }
+.ofaces canvas { image-rendering: pixelated; border-radius: 3px; }
+.osep { color: var(--dim); margin: 0 4px; }
+.olabel { font-size: 13px; line-height: 1.3; }
+/* 選択肢が 多いときは、質問の 文の 下の すきまを つめる */
+#msg:has(#choices.many:not(.hidden)) #msgtext { min-height: 0; }
 
 .btn, #choices button {
   font-family: inherit;

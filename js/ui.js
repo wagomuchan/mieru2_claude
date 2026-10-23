@@ -94,18 +94,53 @@ export async function ask(lines, options) {
   box.innerHTML = '';
   box.classList.toggle('many', options.length > 2);
   box.classList.remove('hidden');
+  box.scrollTop = 0;
   const picked = await new Promise(resolve => {
-    options.forEach((label, i) => {
+    options.forEach((opt, i) => {
       const b = document.createElement('button');
-      b.textContent = label;
+      if (typeof opt === 'string') b.textContent = opt;
+      else optionWithFaces(b, opt);
       b.addEventListener('click', () => resolve(i));
       box.appendChild(b);
     });
+    fitChoices(box);
   });
   box.classList.add('hidden');
   choosing = false;
   closeWindow();
   return picked;
+}
+
+// 選択肢に 小さな 顔を つける：{ label, faces: [['shimeru', 'elesia'], ['meina', 'sakura']], wide }
+// faces は グループごと（へやわりの 2組 など）。グループの あいだに「／」
+function optionWithFaces(b, opt) {
+  b.classList.add('withfaces');
+  if (opt.wide) b.classList.add('wide');
+  const row = document.createElement('span');
+  row.className = 'ofaces';
+  opt.faces.forEach((group, gi) => {
+    if (gi > 0) { const sep = document.createElement('span'); sep.className = 'osep'; sep.textContent = '／'; row.appendChild(sep); }
+    for (const id of group) {
+      const cv = document.createElement('canvas');
+      paintPortrait(cv, getFaces(id).normal, 28);
+      row.appendChild(cv);
+    }
+  });
+  const lab = document.createElement('span');
+  lab.className = 'olabel';
+  lab.textContent = opt.label;
+  b.appendChild(row);
+  b.appendChild(lab);
+}
+
+// 選択肢が 多くて はみ出すときは、その中だけ 指で スクロールできるように 高さを きめる
+function fitChoices(box) {
+  box.style.maxHeight = '';
+  if (!box.classList.contains('many')) return;
+  const panel = $('panel').getBoundingClientRect();
+  const top = box.getBoundingClientRect().top;
+  const room = Math.floor(panel.bottom - top - 14);
+  if (box.scrollHeight > room) box.style.maxHeight = Math.max(110, room) + 'px';
 }
 
 export function setPlace(name) {

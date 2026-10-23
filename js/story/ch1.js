@@ -572,6 +572,9 @@ async function offerChapter2(a) {
 // 3人は 対等。自由時間も へやわりも 「2人組」を えらぶ。
 const PAIRS = [['shimeru', 'elesia'], ['shimeru', 'meina'], ['elesia', 'meina']];
 const PAIR_LABELS = ['シメールと エレシア', 'シメールと メイナ', 'エレシアと メイナ'];
+// 選択肢に 小さな 顔を つける
+const PAIR_OPTS = PAIRS.map((p, i) => ({ label: PAIR_LABELS[i], faces: [p] }));
+const ALL_OPT = () => ({ label: 'みんなで すごす', faces: [game.partyIds] });
 const NAMES = { shimeru: ME, elesia: EL, meina: MA };
 const nakaUp = (x, y) => `${NAMES[x]}と ${NAMES[y]}の なかよし度が あがった！`;
 
@@ -582,7 +585,7 @@ async function restAtTent(a) {
   const lv = game.phase >= PH.TOWER ? 2 : 1;
 
   // 自由時間
-  const ft = await a.ask(['ねるまえの 自由時間。', 'だれと だれが いっしょに すごす？'], [...PAIR_LABELS, 'みんなで すごす']);
+  const ft = await a.ask(['ねるまえの 自由時間。', 'だれと だれが いっしょに すごす？'], [...PAIR_OPTS, ALL_OPT()]);
   await a.fade(true);
   a.tint('evening');
   await a.wait(300);
@@ -597,7 +600,7 @@ async function restAtTent(a) {
   }
 
   // へやわり
-  const room = await a.ask(['へやわり。 だれと だれが 同じ テントで ねる？', '（のこりの ひとりは、 ピピたちと ねるよ）'], PAIR_LABELS);
+  const room = await a.ask(['へやわり。 だれと だれが 同じ テントで ねる？', '（のこりの ひとりは、 ピピたちと ねるよ）'], PAIR_OPTS);
   const [x, y] = PAIRS[room];
   addNaka(x, y, 5);
   await a.fade(true);
