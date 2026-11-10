@@ -97,8 +97,11 @@ function expression(g, ex, def) {
   if (BROWS[ex]) { g.stamp(11, 12, BROWS[ex]); g.mirrorStamp(18, 12, BROWS[ex]); }
   if (def.eyes === 'soft' && eyes[0] === 'kkk') {
     // まぶたが すこし さがった、のんびり目
+    // （まぶたを 1段 さげたぶん、目の 光も 1段 下に ずらす。かくれると 目が 死んで 見える）
     g.rect(11, 15, 3, 1, 'S'); g.rect(18, 15, 3, 1, 'S');
     g.rect(11, 16, 3, 1, 'k'); g.rect(18, 16, 3, 1, 'k');
+    const shine = [eyes[1], eyes[3]];
+    g.stamp(11, 17, shine); g.stamp(18, 17, shine);
   }
   if (def.eyes === 'sharp' && eyes[0] === 'kkk') {
     g.put(10, 15, 'k'); g.put(21, 15, 'k');
